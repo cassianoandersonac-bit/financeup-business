@@ -55,7 +55,6 @@ Ainda não implementado (ver o prompt original para a ordem sugerida):
 listagem de Transações com filtros, Plano de Contas, Relatórios
 agregados.
 
-**Pendente:** ninguém rodou isso ainda contra uma `DATABASE_URL` real —
-só há testes unitários (mock) e um smoke test de roteamento. Fluxo
-completo (registro → empresa → conta → import de verdade) precisa de um
-banco Postgres configurado primeiro.
+Banco Neon configurado e migration aplicada — fluxo completo (registro →
+empresa → conta → import de extrato) já testado ponta a ponta contra o
+banco de verdade.

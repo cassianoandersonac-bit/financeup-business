@@ -57,8 +57,8 @@ Próximo, na ordem sugerida pelo prompt original: Transações com filtros
 Repositório git local ainda sem remoto — não criar/push para o GitHub sem
 pedir autorização antes.
 
-**Bloqueio conhecido**: ainda não há uma `DATABASE_URL` real configurada
-(o usuário precisa criar um banco Postgres novo, ex: projeto separado no
-Neon) — auth, CRUDs e import só foram verificados com testes
-unitários/mock e smoke test de roteamento, nunca ponta a ponta contra um
-banco de verdade.
+**Banco de dados:** Neon PostgreSQL real já configurado (`DATABASE_URL`
+pooled + `DIRECT_URL` direct, ambos em `backend/.env`, gitignored),
+migration inicial aplicada. Todo o fluxo (auth, CRUD de empresas/filiais/
+contas, import de OFX com dedup) foi verificado ponta a ponta contra
+esse banco de verdade em 2026-09-04 — não é mais só teste com mock.
