@@ -29,6 +29,7 @@ cp .env.example .env
 npm install
 npm run db:push      # cria as tabelas a partir do prisma/schema.prisma
 npm run dev           # http://localhost:3002
+npm test              # roda os testes (não precisa de banco real)
 ```
 
 ### 3. Frontend
@@ -46,8 +47,15 @@ comece a cadastrar empresas.
 ## Status
 
 Implementado: autenticação (organização + usuário admin), CRUD de
-Empresas, Filiais e Contas Bancárias, todos isolados por organização.
+Empresas, Filiais e Contas Bancárias (todos isolados por organização), e
+importação de extrato OFX/QFX com deduplicação (`fitidOfx`/`hashDedup`) —
+ver `prompt-claude-code-import-ofx.md` pra arquitetura desse módulo.
 
-Ainda não implementado (ver o prompt para a ordem sugerida): importação de
-extrato OFX/QFX com deduplicação, listagem de Transações com filtros,
-Plano de Contas, Relatórios agregados.
+Ainda não implementado (ver o prompt original para a ordem sugerida):
+listagem de Transações com filtros, Plano de Contas, Relatórios
+agregados.
+
+**Pendente:** ninguém rodou isso ainda contra uma `DATABASE_URL` real —
+só há testes unitários (mock) e um smoke test de roteamento. Fluxo
+completo (registro → empresa → conta → import de verdade) precisa de um
+banco Postgres configurado primeiro.
