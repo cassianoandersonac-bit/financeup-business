@@ -1,0 +1,224 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PapelUsuario {
+  ADMIN
+  EDITOR
+  VISUALIZADOR
+}
+
+enum TipoConexaoConta {
+  MANUAL
+  AUTOMATICA // reservado para futura integração Open Finance
+}
+
+enum TipoContaBancaria {
+  CORRENTE
+  POUPANCA
+  CARTAO_CREDITO
+  INVESTIMENTO
+}
+
+enum TipoTransacao {
+  RECEITA
+  DESPESA
+  TRANSFERENCIA
+}
+
+enum StatusDuplicata {
+  UNICA
+  PROVAVEL_DUPLICATA
+  CONFIRMADA_DUPLICATA
+  IGNORADA
+}
+
+enum StatusPlano {
+  TRIAL
+  ATIVO
+  INATIVO
+  CANCELADO
+}
+
+model Organizacao {
+  id            String       @id @default(cuid())
+  nome          String
+  planoAtual    String?
+  statusPlano   StatusPlano  @default(TRIAL)
+  trialFimEm    DateTime?
+  criadoEm      DateTime     @default(now())
+  atualizadoEm  DateTime     @updatedAt
+
+  usuarios      UsuarioOrganizacao[]
+  empresas      Empresa[]
+
+  @@map("organizacoes")
+}
+
+model Usuario {
+  id           String   @id @default(cuid())
+  nome         String
+  email        String   @unique
+  senhaHash    String
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  organizacoes UsuarioOrganizacao[]
+
+  @@map("usuarios")
+}
+
+model UsuarioOrganizacao {
+  id             String       @id @default(cuid())
+  usuarioId      String
+  organizacaoId  String
+  papel          PapelUsuario @default(EDITOR)
+  criadoEm       DateTime     @default(now())
+
+  usuario        Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  organizacao    Organizacao  @relation(fields: [organizacaoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, organizacaoId])
+  @@map("usuarios_organizacoes")
+}
+
+model Empresa {
+  id             String   @id @default(cuid())
+  organizacaoId  String
+  nome           String
+  nomeFantasia   String?
+  cnpj           String
+  cidade         String?
+  estado         String?
+  ativa          Boolean  @default(true)
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
+
+  organizacao    Organizacao @relation(fields: [organizacaoId], references: [id], onDelete: Cascade)
+  filiais        Filial[]
+  contasBancarias ContaBancaria[]
+  planoContas    PlanoConta[]
+  transacoes     Transacao[]
+
+  @@unique([organizacaoId, cnpj])
+  @@index([organizacaoId])
+  @@map("empresas")
+}
+
+model Filial {
+  id           String   @id @default(cuid())
+  empresaId    String
+  nome         String
+  cnpj         String?
+  cidade       String?
+  estado       String?
+  ativa        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+
+  empresa      Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  contasBancarias ContaBancaria[]
+  transacoes   Transacao[]
+
+  @@index([empresaId])
+  @@map("filiais")
+}
+
+model ContaBancaria {
+  id             String            @id @default(cuid())
+  empresaId      String
+  filialId       String?
+  nomeConta      String
+  banco          String
+  agencia        String?
+  numeroConta    String?
+  tipo           TipoContaBancaria @default(CORRENTE)
+  tipoConexao    TipoConexaoConta  @default(MANUAL)
+  saldoInicial   Decimal           @default(0) @db.Decimal(14, 2)
+  saldoAtual     Decimal           @default(0) @db.Decimal(14, 2)
+  ativa          Boolean           @default(true)
+  criadoEm       DateTime          @default(now())
+  atualizadoEm   DateTime          @updatedAt
+
+  empresa        Empresa           @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  filial         Filial?           @relation(fields: [filialId], references: [id])
+  transacoes     Transacao[]
+  importacoes    ImportacaoExtrato[]
+
+  @@index([empresaId])
+  @@map("contas_bancarias")
+}
+
+model PlanoConta {
+  id           String       @id @default(cuid())
+  empresaId    String
+  codigo       String
+  descricao    String
+  contaPaiId   String?
+  tipo         TipoTransacao
+  ativo        Boolean      @default(true)
+
+  empresa      Empresa      @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  contaPai     PlanoConta?  @relation("PlanoContaHierarquia", fields: [contaPaiId], references: [id])
+  subcontas    PlanoConta[] @relation("PlanoContaHierarquia")
+  transacoes   Transacao[]
+
+  @@unique([empresaId, codigo])
+  @@index([empresaId])
+  @@map("plano_contas")
+}
+
+model ImportacaoExtrato {
+  id              String   @id @default(cuid())
+  contaBancariaId String
+  nomeArquivo     String
+  totalLidas      Int      @default(0)
+  totalImportadas Int      @default(0)
+  totalDuplicadas Int      @default(0)
+  importadoEm     DateTime @default(now())
+
+  contaBancaria   ContaBancaria @relation(fields: [contaBancariaId], references: [id], onDelete: Cascade)
+  transacoes      Transacao[]
+
+  @@index([contaBancariaId])
+  @@map("importacoes_extrato")
+}
+
+model Transacao {
+  id                String          @id @default(cuid())
+  empresaId         String
+  filialId          String?
+  contaBancariaId   String
+  importacaoId      String?
+  planoContaId      String?
+
+  data              DateTime
+  descricao         String
+  valor             Decimal         @db.Decimal(14, 2)
+  tipo              TipoTransacao
+
+  fitidOfx          String?
+  hashDedup         String?
+
+  statusDuplicata   StatusDuplicata @default(UNICA)
+  conciliado        Boolean         @default(false)
+
+  criadoEm          DateTime        @default(now())
+  atualizadoEm      DateTime        @updatedAt
+
+  empresa           Empresa           @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  filial            Filial?           @relation(fields: [filialId], references: [id])
+  contaBancaria     ContaBancaria     @relation(fields: [contaBancariaId], references: [id], onDelete: Cascade)
+  importacao        ImportacaoExtrato? @relation(fields: [importacaoId], references: [id])
+  planoConta        PlanoConta?       @relation(fields: [planoContaId], references: [id])
+
+  @@unique([contaBancariaId, fitidOfx])
+  @@index([empresaId, data])
+  @@index([contaBancariaId, hashDedup])
+  @@map("transacoes")
+}
