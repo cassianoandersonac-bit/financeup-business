@@ -45,6 +45,12 @@ enum StatusPlano {
   CANCELADO
 }
 
+enum StatusImportacao {
+  PROCESSANDO
+  CONCLUIDO
+  FALHOU_PARCIAL
+}
+
 model Organizacao {
   id            String       @id @default(cuid())
   nome          String
@@ -174,13 +180,15 @@ model PlanoConta {
 }
 
 model ImportacaoExtrato {
-  id              String   @id @default(cuid())
+  id              String            @id @default(cuid())
   contaBancariaId String
   nomeArquivo     String
-  totalLidas      Int      @default(0)
-  totalImportadas Int      @default(0)
-  totalDuplicadas Int      @default(0)
-  importadoEm     DateTime @default(now())
+  status          StatusImportacao  @default(PROCESSANDO)
+  conteudoBruto   String?
+  totalLidas      Int               @default(0)
+  totalImportadas Int               @default(0)
+  totalDuplicadas Int               @default(0)
+  importadoEm     DateTime          @default(now())
 
   contaBancaria   ContaBancaria @relation(fields: [contaBancariaId], references: [id], onDelete: Cascade)
   transacoes      Transacao[]

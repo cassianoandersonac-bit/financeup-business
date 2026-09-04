@@ -1,12 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 type Filial = { id: string; nome: string };
+
+type Importacao = {
+  id: string;
+  nomeArquivo: string;
+  status: "PROCESSANDO" | "CONCLUIDO" | "FALHOU_PARCIAL";
+  totalLidas: number;
+  totalImportadas: number;
+  totalDuplicadas: number;
+  importadoEm: string;
+};
+
+const STATUS_LABEL: Record<Importacao["status"], string> = {
+  PROCESSANDO: "Processando",
+  CONCLUIDO: "Concluído",
+  FALHOU_PARCIAL: "Falhou (parcial)",
+};
 
 type ContaBancaria = {
   id: string;
@@ -44,6 +60,12 @@ export default function ContasBancariasPage() {
   const [saldoInicial, setSaldoInicial] = useState("0");
   const [salvando, setSalvando] = useState(false);
   const [erroForm, setErroForm] = useState<string | null>(null);
+
+  const [contaExpandidaId, setContaExpandidaId] = useState<string | null>(null);
+  const [historicoPorConta, setHistoricoPorConta] = useState<Record<string, Importacao[]>>({});
+  const [arquivoSelecionado, setArquivoSelecionado] = useState<File | null>(null);
+  const [enviandoImport, setEnviandoImport] = useState(false);
+  const [erroImport, setErroImport] = useState<string | null>(null);
 
   async function carregar() {
     if (!orgId) return;
@@ -108,6 +130,47 @@ export default function ContasBancariasPage() {
       token
     );
     await carregar();
+  }
+
+  async function carregarHistorico(contaId: string) {
+    if (!orgId) return;
+    const dados = await api.get<Importacao[]>(
+      `/organizacoes/${orgId}/empresas/${empresaId}/contas-bancarias/${contaId}/importacoes`,
+      token
+    );
+    setHistoricoPorConta((prev) => ({ ...prev, [contaId]: dados }));
+  }
+
+  async function onAlternarImportacao(contaId: string) {
+    if (contaExpandidaId === contaId) {
+      setContaExpandidaId(null);
+      return;
+    }
+    setContaExpandidaId(contaId);
+    setArquivoSelecionado(null);
+    setErroImport(null);
+    if (!historicoPorConta[contaId]) await carregarHistorico(contaId);
+  }
+
+  async function onEnviarArquivo(contaId: string) {
+    if (!orgId || !arquivoSelecionado) return;
+    setEnviandoImport(true);
+    setErroImport(null);
+    try {
+      const formData = new FormData();
+      formData.append("arquivo", arquivoSelecionado);
+      await api.postForm(
+        `/organizacoes/${orgId}/empresas/${empresaId}/contas-bancarias/${contaId}/importacoes`,
+        formData,
+        token
+      );
+      setArquivoSelecionado(null);
+      await Promise.all([carregarHistorico(contaId), carregar()]);
+    } catch (err) {
+      setErroImport(err instanceof ApiError ? err.message : "Erro ao importar extrato");
+    } finally {
+      setEnviandoImport(false);
+    }
   }
 
   function nomeFilial(filialId: string | null) {
@@ -198,23 +261,88 @@ export default function ContasBancariasPage() {
           </thead>
           <tbody>
             {contas.map((conta) => (
-              <tr key={conta.id} className="border-t border-zinc-100">
-                <td className="px-4 py-2">
-                  {conta.nomeConta}
-                  {!conta.ativa && <span className="ml-2 rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">inativa</span>}
-                </td>
-                <td className="px-4 py-2">{conta.banco}</td>
-                <td className="px-4 py-2">{conta.tipo}</td>
-                <td className="px-4 py-2">{nomeFilial(conta.filialId)}</td>
-                <td className="px-4 py-2">
-                  {Number(conta.saldoAtual).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                </td>
-                <td className="px-4 py-2 text-right">
-                  <button onClick={() => alternarStatus(conta)} className="text-xs text-zinc-500 underline">
-                    {conta.ativa ? "Inativar" : "Ativar"}
-                  </button>
-                </td>
-              </tr>
+              <Fragment key={conta.id}>
+                <tr className="border-t border-zinc-100">
+                  <td className="px-4 py-2">
+                    {conta.nomeConta}
+                    {!conta.ativa && <span className="ml-2 rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">inativa</span>}
+                  </td>
+                  <td className="px-4 py-2">{conta.banco}</td>
+                  <td className="px-4 py-2">{conta.tipo}</td>
+                  <td className="px-4 py-2">{nomeFilial(conta.filialId)}</td>
+                  <td className="px-4 py-2">
+                    {Number(conta.saldoAtual).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </td>
+                  <td className="px-4 py-2 text-right space-x-3 whitespace-nowrap">
+                    <button onClick={() => onAlternarImportacao(conta.id)} className="text-xs font-medium text-zinc-700 underline">
+                      {contaExpandidaId === conta.id ? "Fechar" : "Importar extrato"}
+                    </button>
+                    <button onClick={() => alternarStatus(conta)} className="text-xs text-zinc-500 underline">
+                      {conta.ativa ? "Inativar" : "Ativar"}
+                    </button>
+                  </td>
+                </tr>
+
+                {contaExpandidaId === conta.id && (
+                  <tr className="border-t border-zinc-100 bg-zinc-50">
+                    <td colSpan={6} className="px-4 py-4">
+                      <div className="space-y-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            type="file"
+                            accept=".ofx,.qfx"
+                            onChange={(e) => setArquivoSelecionado(e.target.files?.[0] || null)}
+                            className="text-sm"
+                          />
+                          <button
+                            onClick={() => onEnviarArquivo(conta.id)}
+                            disabled={!arquivoSelecionado || enviandoImport}
+                            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                          >
+                            {enviandoImport ? "Importando…" : "Enviar arquivo"}
+                          </button>
+                        </div>
+
+                        {erroImport && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erroImport}</p>}
+
+                        <div>
+                          <p className="mb-1 text-xs font-medium uppercase text-zinc-500">Histórico de importações</p>
+                          {(historicoPorConta[conta.id] || []).length === 0 ? (
+                            <p className="text-sm text-zinc-400">Nenhuma importação ainda.</p>
+                          ) : (
+                            <table className="w-full text-sm">
+                              <tbody>
+                                {(historicoPorConta[conta.id] || []).map((imp) => (
+                                  <tr key={imp.id} className="border-t border-zinc-200">
+                                    <td className="py-1.5 pr-3">{imp.nomeArquivo}</td>
+                                    <td className="py-1.5 pr-3">{new Date(imp.importadoEm).toLocaleString("pt-BR")}</td>
+                                    <td className="py-1.5 pr-3">
+                                      {imp.totalImportadas} importadas / {imp.totalDuplicadas} duplicadas ({imp.totalLidas} lidas)
+                                    </td>
+                                    <td className="py-1.5">
+                                      <span
+                                        className={
+                                          imp.status === "FALHOU_PARCIAL"
+                                            ? "rounded bg-red-50 px-2 py-0.5 text-xs text-red-700"
+                                            : imp.status === "CONCLUIDO"
+                                              ? "rounded bg-green-50 px-2 py-0.5 text-xs text-green-700"
+                                              : "rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500"
+                                        }
+                                      >
+                                        {STATUS_LABEL[imp.status]}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
             {!carregando && contas.length === 0 && (
               <tr>

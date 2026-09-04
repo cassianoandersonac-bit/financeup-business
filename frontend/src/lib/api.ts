@@ -26,10 +26,24 @@ async function request<T>(
   return data as T;
 }
 
+async function requestForm<T>(path: string, formData: FormData, token?: string | null): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  // sem Content-Type manual: o browser define multipart/form-data com o boundary certo
+  const res = await fetch(`${API_URL}${path}`, { method: "POST", body: formData, headers });
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) throw new ApiError(res.status, data.erro || "Erro desconhecido");
+  return data as T;
+}
+
 export const api = {
   get: <T,>(path: string, token?: string | null) => request<T>(path, { method: "GET" }, token),
   post: <T,>(path: string, body: unknown, token?: string | null) =>
     request<T>(path, { method: "POST", body: JSON.stringify(body) }, token),
+  postForm: <T,>(path: string, formData: FormData, token?: string | null) =>
+    requestForm<T>(path, formData, token),
   put: <T,>(path: string, body: unknown, token?: string | null) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body) }, token),
   patch: <T,>(path: string, body: unknown, token?: string | null) =>

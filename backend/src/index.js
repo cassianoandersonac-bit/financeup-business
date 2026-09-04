@@ -6,6 +6,7 @@ const authRoutes           = require('./routes/auth');
 const empresasRoutes       = require('./routes/empresas');
 const filiaisRoutes        = require('./routes/filiais');
 const contasBancariasRoutes = require('./routes/contasBancarias');
+const importacoesRoutes    = require('./routes/importacoes');
 
 const app = express();
 
@@ -18,6 +19,10 @@ app.use('/auth', authRoutes);
 app.use('/organizacoes/:organizacaoId/empresas', empresasRoutes);
 app.use('/organizacoes/:organizacaoId/empresas/:empresaId/filiais', filiaisRoutes);
 app.use('/organizacoes/:organizacaoId/empresas/:empresaId/contas-bancarias', contasBancariasRoutes);
+app.use(
+  '/organizacoes/:organizacaoId/empresas/:empresaId/contas-bancarias/:contaId/importacoes',
+  importacoesRoutes
+);
 app.get('/health', (_, res) => res.json({ ok: true }));
 
 // ── Inicia ───────────────────────────────────────────────────────────────────
