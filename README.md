@@ -47,13 +47,15 @@ comece a cadastrar empresas.
 ## Status
 
 Implementado: autenticação (organização + usuário admin), CRUD de
-Empresas, Filiais e Contas Bancárias (todos isolados por organização), e
-importação de extrato OFX/QFX com deduplicação (`fitidOfx`/`hashDedup`) —
-ver `prompt-claude-code-import-ofx.md` pra arquitetura desse módulo.
+Empresas, Filiais e Contas Bancárias (todos isolados por organização),
+importação de extrato OFX/QFX com deduplicação (`fitidOfx`/`hashDedup` —
+ver `prompt-claude-code-import-ofx.md`), e listagem de Transações com
+filtros (descrição, valor por faixa/exato, tipo, conta, data, status de
+duplicata), ordenação, paginação, conciliação e resolução de duplicata
+provável.
 
 Ainda não implementado (ver o prompt original para a ordem sugerida):
-listagem de Transações com filtros, Plano de Contas, Relatórios
-agregados.
+Plano de Contas, Relatórios agregados.
 
 Banco Neon configurado e migration aplicada — fluxo completo (registro →
 empresa → conta → import de extrato) já testado ponta a ponta contra o
