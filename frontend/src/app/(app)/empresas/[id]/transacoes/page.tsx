@@ -5,6 +5,19 @@ import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ValorMonetario } from "@/components/valor-monetario";
 
 type ContaResumo = { id: string; nomeConta: string; banco: string };
 type PlanoContaResumo = { id: string; codigo: string; descricao: string };
@@ -44,6 +57,33 @@ const STATUS_DUPLICATA_LABEL: Record<Transacao["statusDuplicata"], string> = {
   CONFIRMADA_DUPLICATA: "Duplicata confirmada",
   IGNORADA: "Ignorada",
 };
+
+const SEM_CLASSIFICACAO = "__sem_classificacao__";
+const TODAS = "__todas__";
+
+const ITENS_TIPO = {
+  [TODAS]: "Todos",
+  RECEITA: "Receita",
+  DESPESA: "Despesa",
+  TRANSFERENCIA: "Transferência",
+};
+
+const ITENS_STATUS_DUPLICATA = {
+  [TODAS]: "Únicas e prováveis (padrão)",
+  UNICA: "Única",
+  PROVAVEL_DUPLICATA: "Provável duplicata",
+  CONFIRMADA_DUPLICATA: "Duplicata confirmada",
+  IGNORADA: "Ignorada",
+};
+
+const ITENS_ORDENAR_POR = {
+  data: "Data",
+  valor: "Valor",
+  descricao: "Descrição",
+  criadoEm: "Importação",
+};
+
+const ITENS_DIRECAO = { desc: "↓", asc: "↑" };
 
 function construirQuery(f: typeof FILTROS_INICIAIS, pagina: number) {
   const params = new URLSearchParams();
@@ -171,246 +211,241 @@ function TransacoesPageInterna() {
     await carregar();
   }
 
-  function formatarValor(valor: string) {
-    return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  }
-
   const totalPaginas = resposta ? Math.max(1, Math.ceil(resposta.total / resposta.tamanhoPagina)) : 1;
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6">
       <div>
-        <Link href="/empresas" className="text-sm text-zinc-500 underline">
+        <Link href="/empresas" className="text-sm text-muted-foreground underline">
           ← Empresas
         </Link>
       </div>
 
-      <h1 className="text-lg font-semibold text-zinc-900">Transações</h1>
+      <h1 className="text-lg font-semibold">Transações</h1>
 
-      <form onSubmit={onSubmitFiltros} className="space-y-3 rounded-lg bg-white p-4 ring-1 ring-zinc-200">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Descrição</label>
-            <input
-              value={filtrosForm.descricao}
-              onChange={(e) => atualizarFiltro("descricao", e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Valor</label>
-            <input
-              value={filtrosForm.valor}
-              onChange={(e) => atualizarFiltro("valor", e.target.value)}
-              placeholder="2000 ou 2000.50"
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Tipo</label>
-            <select
-              value={filtrosForm.tipo}
-              onChange={(e) => atualizarFiltro("tipo", e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-            >
-              <option value="">Todos</option>
-              <option value="RECEITA">Receita</option>
-              <option value="DESPESA">Despesa</option>
-              <option value="TRANSFERENCIA">Transferência</option>
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Conta bancária</label>
-            <select
-              value={filtrosForm.contaBancariaId}
-              onChange={(e) => atualizarFiltro("contaBancariaId", e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-            >
-              <option value="">Todas</option>
-              {contas.map((c) => (
-                <option key={c.id} value={c.id}>{c.nomeConta}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Data inicial</label>
-            <input
-              type="date"
-              value={filtrosForm.dataInicial}
-              onChange={(e) => atualizarFiltro("dataInicial", e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Data final</label>
-            <input
-              type="date"
-              value={filtrosForm.dataFinal}
-              onChange={(e) => atualizarFiltro("dataFinal", e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Status de duplicata</label>
-            <select
-              value={filtrosForm.statusDuplicata}
-              onChange={(e) => atualizarFiltro("statusDuplicata", e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-            >
-              <option value="">Únicas e prováveis (padrão)</option>
-              <option value="UNICA">Única</option>
-              <option value="PROVAVEL_DUPLICATA">Provável duplicata</option>
-              <option value="CONFIRMADA_DUPLICATA">Duplicata confirmada</option>
-              <option value="IGNORADA">Ignorada</option>
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Classificação</label>
-            <select
-              value={filtrosForm.planoContaId}
-              onChange={(e) => atualizarFiltro("planoContaId", e.target.value)}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-            >
-              <option value="">Todas</option>
-              <option value="nenhum">Sem classificação</option>
-              {planoContas.map((p) => (
-                <option key={p.id} value={p.id}>{p.codigo} · {p.descricao}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-zinc-700">Ordenar por</label>
-            <div className="flex gap-1">
-              <select
-                value={filtrosForm.ordenarPor}
-                onChange={(e) => atualizarFiltro("ordenarPor", e.target.value)}
-                className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
+      <Card className="px-4">
+        <form onSubmit={onSubmitFiltros} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Descrição</label>
+              <Input value={filtrosForm.descricao} onChange={(e) => atualizarFiltro("descricao", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Valor</label>
+              <Input
+                value={filtrosForm.valor}
+                onChange={(e) => atualizarFiltro("valor", e.target.value)}
+                placeholder="2000 ou 2000.50"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Tipo</label>
+              <Select
+                items={ITENS_TIPO}
+                value={filtrosForm.tipo || TODAS}
+                onValueChange={(v) => atualizarFiltro("tipo", !v || v === TODAS ? "" : v)}
               >
-                <option value="data">Data</option>
-                <option value="valor">Valor</option>
-                <option value="descricao">Descrição</option>
-                <option value="criadoEm">Importação</option>
-              </select>
-              <select
-                value={filtrosForm.direcao}
-                onChange={(e) => atualizarFiltro("direcao", e.target.value)}
-                className="rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ITENS_TIPO).map(([valor, rotulo]) => (
+                    <SelectItem key={valor} value={valor}>{rotulo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Conta bancária</label>
+              <Select
+                items={{ [TODAS]: "Todas", ...Object.fromEntries(contas.map((c) => [c.id, c.nomeConta])) }}
+                value={filtrosForm.contaBancariaId || TODAS}
+                onValueChange={(v) => atualizarFiltro("contaBancariaId", !v || v === TODAS ? "" : v)}
               >
-                <option value="desc">↓</option>
-                <option value="asc">↑</option>
-              </select>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TODAS}>Todas</SelectItem>
+                  {contas.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.nomeConta}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Data inicial</label>
+              <Input type="date" value={filtrosForm.dataInicial} onChange={(e) => atualizarFiltro("dataInicial", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Data final</label>
+              <Input type="date" value={filtrosForm.dataFinal} onChange={(e) => atualizarFiltro("dataFinal", e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Status de duplicata</label>
+              <Select
+                items={ITENS_STATUS_DUPLICATA}
+                value={filtrosForm.statusDuplicata || TODAS}
+                onValueChange={(v) => atualizarFiltro("statusDuplicata", !v || v === TODAS ? "" : v)}
+              >
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(ITENS_STATUS_DUPLICATA).map(([valor, rotulo]) => (
+                    <SelectItem key={valor} value={valor}>{rotulo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Classificação</label>
+              <Select
+                items={{
+                  [TODAS]: "Todas",
+                  [SEM_CLASSIFICACAO]: "Sem classificação",
+                  ...Object.fromEntries(planoContas.map((p) => [p.id, `${p.codigo} · ${p.descricao}`])),
+                }}
+                value={filtrosForm.planoContaId || TODAS}
+                onValueChange={(v) => atualizarFiltro("planoContaId", !v || v === TODAS ? "" : v === SEM_CLASSIFICACAO ? "nenhum" : v)}
+              >
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={TODAS}>Todas</SelectItem>
+                  <SelectItem value={SEM_CLASSIFICACAO}>Sem classificação</SelectItem>
+                  {planoContas.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.codigo} · {p.descricao}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Ordenar por</label>
+              <div className="flex gap-1">
+                <Select items={ITENS_ORDENAR_POR} value={filtrosForm.ordenarPor} onValueChange={(v) => v && atualizarFiltro("ordenarPor", v)}>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ITENS_ORDENAR_POR).map(([valor, rotulo]) => (
+                      <SelectItem key={valor} value={valor}>{rotulo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select items={ITENS_DIRECAO} value={filtrosForm.direcao} onValueChange={(v) => v && atualizarFiltro("direcao", v)}>
+                  <SelectTrigger className="w-20"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(ITENS_DIRECAO).map(([valor, rotulo]) => (
+                      <SelectItem key={valor} value={valor}>{rotulo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <button type="submit" className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800">
-            Filtrar
-          </button>
-          <button type="button" onClick={onLimparFiltros} className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100">
-            Limpar
-          </button>
-        </div>
-      </form>
+          <div className="flex gap-2">
+            <Button type="submit">Filtrar</Button>
+            <Button type="button" variant="outline" onClick={onLimparFiltros}>Limpar</Button>
+          </div>
+        </form>
+      </Card>
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {carregando && <p className="text-sm text-zinc-500">Carregando…</p>}
+      {erro && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+      {carregando && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
-      <div className="overflow-x-auto rounded-lg bg-white ring-1 ring-zinc-200">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
-            <tr>
-              <th className="px-3 py-2">Data</th>
-              <th className="px-3 py-2">Descrição</th>
-              <th className="px-3 py-2">Conta</th>
-              <th className="px-3 py-2">Tipo</th>
-              <th className="px-3 py-2">Valor</th>
-              <th className="px-3 py-2">Classificação</th>
-              <th className="px-3 py-2">Duplicata</th>
-              <th className="px-3 py-2">Conciliado</th>
-              <th className="px-3 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Data</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Conta</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>Classificação</TableHead>
+              <TableHead>Duplicata</TableHead>
+              <TableHead>Conciliado</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {(resposta?.itens || []).map((t) => (
-              <tr key={t.id} className="border-t border-zinc-100">
-                <td className="whitespace-nowrap px-3 py-2">{new Date(t.data).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</td>
-                <td className="px-3 py-2">{t.descricao}</td>
-                <td className="whitespace-nowrap px-3 py-2">{t.contaBancaria.nomeConta}</td>
-                <td className="px-3 py-2">{t.tipo}</td>
-                <td className={`whitespace-nowrap px-3 py-2 ${Number(t.valor) < 0 ? "text-red-700" : "text-green-700"}`}>
-                  {formatarValor(t.valor)}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
-                  <select
-                    value={t.planoContaId || ""}
-                    onChange={(e) => onClassificar(t, e.target.value)}
-                    className="rounded-md border border-zinc-200 px-1.5 py-1 text-xs"
+              <TableRow key={t.id}>
+                <TableCell>{new Date(t.data).toLocaleDateString("pt-BR", { timeZone: "UTC" })}</TableCell>
+                <TableCell className="whitespace-normal">{t.descricao}</TableCell>
+                <TableCell>{t.contaBancaria.nomeConta}</TableCell>
+                <TableCell>{t.tipo}</TableCell>
+                <TableCell className="text-right"><ValorMonetario valor={t.valor} /></TableCell>
+                <TableCell>
+                  <Select
+                    items={{
+                      [SEM_CLASSIFICACAO]: "Sem classificação",
+                      ...Object.fromEntries(planoContas.map((p) => [p.id, `${p.codigo} · ${p.descricao}`])),
+                    }}
+                    value={t.planoContaId || SEM_CLASSIFICACAO}
+                    onValueChange={(v) => onClassificar(t, !v || v === SEM_CLASSIFICACAO ? "" : v)}
                   >
-                    <option value="">Sem classificação</option>
-                    {planoContas.map((p) => (
-                      <option key={p.id} value={p.id}>{p.codigo} · {p.descricao}</option>
-                    ))}
-                  </select>
-                </td>
-                <td className="whitespace-nowrap px-3 py-2">
+                    <SelectTrigger size="sm" className="w-40"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={SEM_CLASSIFICACAO}>Sem classificação</SelectItem>
+                      {planoContas.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.codigo} · {p.descricao}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </TableCell>
+                <TableCell>
                   {t.statusDuplicata !== "UNICA" && (
-                    <span
-                      className={
-                        t.statusDuplicata === "PROVAVEL_DUPLICATA"
-                          ? "rounded bg-amber-50 px-2 py-0.5 text-xs text-amber-700"
-                          : "rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500"
-                      }
-                    >
+                    <Badge variant={t.statusDuplicata === "PROVAVEL_DUPLICATA" ? "outline" : "secondary"}>
                       {STATUS_DUPLICATA_LABEL[t.statusDuplicata]}
-                    </span>
+                    </Badge>
                   )}
-                </td>
-                <td className="px-3 py-2 text-center">
-                  <input type="checkbox" checked={t.conciliado} onChange={() => onConciliar(t)} />
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-right">
+                </TableCell>
+                <TableCell className="text-center">
+                  <input
+                    type="checkbox"
+                    checked={t.conciliado}
+                    onChange={() => onConciliar(t)}
+                    className="accent-primary"
+                  />
+                </TableCell>
+                <TableCell className="text-right">
                   {t.statusDuplicata === "PROVAVEL_DUPLICATA" && (
-                    <span className="space-x-2">
-                      <button onClick={() => onResolverDuplicata(t, "CONFIRMAR")} className="text-xs text-zinc-500 underline">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="xs" onClick={() => onResolverDuplicata(t, "CONFIRMAR")}>
                         Confirmar duplicata
-                      </button>
-                      <button onClick={() => onResolverDuplicata(t, "MARCAR_UNICA")} className="text-xs text-zinc-700 underline">
+                      </Button>
+                      <Button variant="ghost" size="xs" onClick={() => onResolverDuplicata(t, "MARCAR_UNICA")}>
                         Marcar como única
-                      </button>
-                    </span>
+                      </Button>
+                    </div>
                   )}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
             {!carregando && (resposta?.itens || []).length === 0 && (
-              <tr>
-                <td colSpan={9} className="px-3 py-6 text-center text-zinc-400">Nenhuma transação encontrada.</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={9} className="py-6 text-center text-muted-foreground">Nenhuma transação encontrada.</TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
 
       {resposta && resposta.total > 0 && (
-        <div className="flex items-center justify-between text-sm text-zinc-500">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
             {resposta.total} transaç{resposta.total === 1 ? "ão" : "ões"} · página {resposta.pagina} de {totalPaginas}
           </span>
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               disabled={pagina <= 1}
               onClick={() => setPagina((p) => Math.max(1, p - 1))}
-              className="rounded-md border border-zinc-300 px-3 py-1 disabled:opacity-40"
             >
               Anterior
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               disabled={pagina >= totalPaginas}
               onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-              className="rounded-md border border-zinc-300 px-3 py-1 disabled:opacity-40"
             >
               Próxima
-            </button>
+            </Button>
           </div>
         </div>
       )}

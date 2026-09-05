@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 type Empresa = {
   id: string;
@@ -159,154 +163,144 @@ export default function EmpresasPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-zinc-900">Empresas</h1>
-        <button
-          onClick={() => setMostrarForm((v) => !v)}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
-        >
+        <h1 className="text-lg font-semibold">Empresas</h1>
+        <Button onClick={() => setMostrarForm((v) => !v)}>
           {mostrarForm ? "Cancelar" : "Nova empresa"}
-        </button>
+        </Button>
       </div>
 
       {mostrarForm && (
-        <form onSubmit={onCriarEmpresa} className="space-y-3 rounded-lg bg-white p-4 ring-1 ring-zinc-200">
-          {erroForm && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erroForm}</p>}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Nome *</label>
-              <input required value={nome} onChange={(e) => setNome(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
+        <Card className="px-4">
+          <form onSubmit={onCriarEmpresa} className="space-y-3">
+            {erroForm && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erroForm}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Nome *</label>
+                <Input required value={nome} onChange={(e) => setNome(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Nome fantasia</label>
+                <Input value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">CNPJ *</label>
+                <Input required value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Cidade</label>
+                <Input value={cidade} onChange={(e) => setCidade(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Estado</label>
+                <Input value={estado} onChange={(e) => setEstado(e.target.value)} maxLength={2} />
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Nome fantasia</label>
-              <input value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">CNPJ *</label>
-              <input required value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Cidade</label>
-              <input value={cidade} onChange={(e) => setCidade(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Estado</label>
-              <input value={estado} onChange={(e) => setEstado(e.target.value)} maxLength={2} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-          </div>
-          <button type="submit" disabled={salvando} className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50">
-            {salvando ? "Salvando…" : "Salvar empresa"}
-          </button>
-        </form>
+            <Button type="submit" disabled={salvando}>
+              {salvando ? "Salvando…" : "Salvar empresa"}
+            </Button>
+          </form>
+        </Card>
       )}
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {carregando && <p className="text-sm text-zinc-500">Carregando…</p>}
+      {erro && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+      {carregando && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
       <div className="space-y-3">
         {!carregando && empresas.length === 0 && (
-          <p className="text-sm text-zinc-500">Nenhuma empresa cadastrada ainda.</p>
+          <p className="text-sm text-muted-foreground">Nenhuma empresa cadastrada ainda.</p>
         )}
 
         {empresas.map((empresa) => (
-          <div key={empresa.id} className="rounded-lg bg-white p-4 ring-1 ring-zinc-200">
+          <Card key={empresa.id} className="px-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-zinc-900">
+                <p className="font-medium">
                   {empresa.nome}
-                  {!empresa.ativa && <span className="ml-2 rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">inativa</span>}
+                  {!empresa.ativa && <Badge variant="secondary" className="ml-2">inativa</Badge>}
                 </p>
-                <p className="text-sm text-zinc-500">
+                <p className="text-sm text-muted-foreground">
                   {formatCnpj(empresa.cnpj)}
                   {empresa.cidade ? ` · ${empresa.cidade}${empresa.estado ? `/${empresa.estado}` : ""}` : ""}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Link href={`/empresas/${empresa.id}/dashboard`} className="text-sm font-medium text-zinc-700 underline">
+              <div className="flex flex-wrap items-center justify-end gap-1">
+                <Button variant="ghost" size="xs" nativeButton={false} render={<Link href={`/empresas/${empresa.id}/dashboard`} />}>
                   Dashboard
-                </Link>
-                <Link href={`/empresas/${empresa.id}/transacoes`} className="text-sm font-medium text-zinc-700 underline">
+                </Button>
+                <Button variant="ghost" size="xs" nativeButton={false} render={<Link href={`/empresas/${empresa.id}/transacoes`} />}>
                   Transações
-                </Link>
-                <Link href={`/empresas/${empresa.id}/plano-contas`} className="text-sm font-medium text-zinc-700 underline">
+                </Button>
+                <Button variant="ghost" size="xs" nativeButton={false} render={<Link href={`/empresas/${empresa.id}/plano-contas`} />}>
                   Plano de Contas
-                </Link>
-                <Link href={`/empresas/${empresa.id}/contas`} className="text-sm font-medium text-zinc-700 underline">
+                </Button>
+                <Button variant="ghost" size="xs" nativeButton={false} render={<Link href={`/empresas/${empresa.id}/contas`} />}>
                   Contas bancárias
-                </Link>
-                <button onClick={() => onExpandir(empresa.id)} className="rounded-md border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100">
+                </Button>
+                <Button variant="outline" size="xs" onClick={() => onExpandir(empresa.id)}>
                   {expandida === empresa.id ? "Ocultar filiais" : "Filiais"}
-                </button>
-                <button onClick={() => alternarStatus(empresa)} className="rounded-md border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100">
+                </Button>
+                <Button variant="outline" size="xs" onClick={() => alternarStatus(empresa)}>
                   {empresa.ativa ? "Inativar" : "Ativar"}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="xs"
                   onClick={() => {
                     setErroExclusao(null);
                     setConfirmandoExclusaoId(empresa.id);
                   }}
-                  className="rounded-md border border-red-200 px-2 py-1 text-sm text-red-700 hover:bg-red-50"
                 >
                   Excluir
-                </button>
+                </Button>
               </div>
             </div>
 
             {confirmandoExclusaoId === empresa.id && (
-              <div className="mt-4 space-y-2 rounded-md border border-red-200 bg-red-50 p-3">
-                <p className="text-sm text-red-800">
+              <div className="mt-4 space-y-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-sm text-destructive">
                   Isso apaga <strong>{empresa.nome}</strong> definitivamente, junto com filiais, contas
                   bancárias e plano de contas — não tem como desfazer. Só é permitido se a empresa não tiver
                   nenhuma transação importada.
                 </p>
-                {erroExclusao && <p className="text-sm text-red-700">{erroExclusao}</p>}
+                {erroExclusao && <p className="text-sm text-destructive">{erroExclusao}</p>}
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => onExcluirEmpresa(empresa.id)}
-                    disabled={excluindo}
-                    className="rounded-md bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50"
-                  >
+                  <Button variant="destructive" size="sm" onClick={() => onExcluirEmpresa(empresa.id)} disabled={excluindo}>
                     {excluindo ? "Excluindo…" : "Sim, excluir definitivamente"}
-                  </button>
-                  <button
-                    onClick={() => setConfirmandoExclusaoId(null)}
-                    className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
-                  >
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setConfirmandoExclusaoId(null)}>
                     Cancelar
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {expandida === empresa.id && (
-              <div className="mt-4 space-y-2 border-t border-zinc-100 pt-4">
+              <div className="mt-4 space-y-2 border-t pt-4">
                 {(filiaisPorEmpresa[empresa.id] || []).map((filial) => (
                   <div key={filial.id} className="flex items-center justify-between text-sm">
                     <span>
                       {filial.nome}
-                      {!filial.ativa && <span className="ml-2 rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">inativa</span>}
+                      {!filial.ativa && <Badge variant="secondary" className="ml-2">inativa</Badge>}
                     </span>
-                    <button onClick={() => alternarStatusFilial(empresa.id, filial)} className="text-xs text-zinc-500 underline">
+                    <Button variant="ghost" size="xs" onClick={() => alternarStatusFilial(empresa.id, filial)}>
                       {filial.ativa ? "Inativar" : "Ativar"}
-                    </button>
+                    </Button>
                   </div>
                 ))}
                 {(filiaisPorEmpresa[empresa.id] || []).length === 0 && (
-                  <p className="text-sm text-zinc-400">Nenhuma filial cadastrada.</p>
+                  <p className="text-sm text-muted-foreground">Nenhuma filial cadastrada.</p>
                 )}
                 <form onSubmit={(e) => onCriarFilial(e, empresa.id)} className="flex gap-2 pt-2">
-                  <input
+                  <Input
                     value={novaFilialNome}
                     onChange={(e) => setNovaFilialNome(e.target.value)}
                     placeholder="Nome da filial"
-                    className="flex-1 rounded-md border border-zinc-300 px-3 py-1.5 text-sm"
                   />
-                  <button type="submit" className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100">
-                    Adicionar
-                  </button>
+                  <Button type="submit" variant="outline">Adicionar</Button>
                 </form>
               </div>
             )}
-          </div>
+          </Card>
         ))}
       </div>
     </div>

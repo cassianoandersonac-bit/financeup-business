@@ -5,6 +5,19 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ValorMonetario } from "@/components/valor-monetario";
 
 type Filial = { id: string; nome: string };
 
@@ -38,6 +51,7 @@ type ContaBancaria = {
 };
 
 const TIPOS = ["CORRENTE", "POUPANCA", "CARTAO_CREDITO", "INVESTIMENTO"] as const;
+const NENHUMA_FILIAL = "__nenhuma__";
 
 export default function ContasBancariasPage() {
   const params = useParams<{ id: string }>();
@@ -181,111 +195,120 @@ export default function ContasBancariasPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div>
-        <Link href="/empresas" className="text-sm text-zinc-500 underline">
+        <Link href="/empresas" className="text-sm text-muted-foreground underline">
           ← Empresas
         </Link>
       </div>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-zinc-900">Contas bancárias</h1>
-        <button
-          onClick={() => setMostrarForm((v) => !v)}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
-        >
+        <h1 className="text-lg font-semibold">Contas bancárias</h1>
+        <Button onClick={() => setMostrarForm((v) => !v)}>
           {mostrarForm ? "Cancelar" : "Nova conta"}
-        </button>
+        </Button>
       </div>
 
       {mostrarForm && (
-        <form onSubmit={onCriar} className="space-y-3 rounded-lg bg-white p-4 ring-1 ring-zinc-200">
-          {erroForm && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erroForm}</p>}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Nome da conta *</label>
-              <input required value={nomeConta} onChange={(e) => setNomeConta(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
+        <Card className="px-4">
+          <form onSubmit={onCriar} className="space-y-3">
+            {erroForm && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erroForm}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Nome da conta *</label>
+                <Input required value={nomeConta} onChange={(e) => setNomeConta(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Banco *</label>
+                <Input required value={banco} onChange={(e) => setBanco(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Agência</label>
+                <Input value={agencia} onChange={(e) => setAgencia(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Número da conta</label>
+                <Input value={numeroConta} onChange={(e) => setNumeroConta(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Tipo</label>
+                <Select value={tipo} onValueChange={(v) => v && setTipo(v as (typeof TIPOS)[number])}>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TIPOS.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Filial (opcional)</label>
+                <Select
+                  items={{ [NENHUMA_FILIAL]: "Nenhuma (matriz)", ...Object.fromEntries(filiais.map((f) => [f.id, f.nome])) }}
+                  value={filialId || NENHUMA_FILIAL}
+                  onValueChange={(v) => setFilialId(!v || v === NENHUMA_FILIAL ? "" : v)}
+                >
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NENHUMA_FILIAL}>Nenhuma (matriz)</SelectItem>
+                    {filiais.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>{f.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Saldo inicial</label>
+                <Input value={saldoInicial} onChange={(e) => setSaldoInicial(e.target.value)} />
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Banco *</label>
-              <input required value={banco} onChange={(e) => setBanco(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Agência</label>
-              <input value={agencia} onChange={(e) => setAgencia(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Número da conta</label>
-              <input value={numeroConta} onChange={(e) => setNumeroConta(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Tipo</label>
-              <select value={tipo} onChange={(e) => setTipo(e.target.value as (typeof TIPOS)[number])} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm">
-                {TIPOS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Filial (opcional)</label>
-              <select value={filialId} onChange={(e) => setFilialId(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm">
-                <option value="">Nenhuma (matriz)</option>
-                {filiais.map((f) => (
-                  <option key={f.id} value={f.id}>{f.nome}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Saldo inicial</label>
-              <input value={saldoInicial} onChange={(e) => setSaldoInicial(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-          </div>
-          <button type="submit" disabled={salvando} className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50">
-            {salvando ? "Salvando…" : "Salvar conta"}
-          </button>
-        </form>
+            <Button type="submit" disabled={salvando}>
+              {salvando ? "Salvando…" : "Salvar conta"}
+            </Button>
+          </form>
+        </Card>
       )}
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {carregando && <p className="text-sm text-zinc-500">Carregando…</p>}
+      {erro && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+      {carregando && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
-      <div className="overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
-            <tr>
-              <th className="px-4 py-2">Conta</th>
-              <th className="px-4 py-2">Banco</th>
-              <th className="px-4 py-2">Tipo</th>
-              <th className="px-4 py-2">Filial</th>
-              <th className="px-4 py-2">Saldo atual</th>
-              <th className="px-4 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Conta</TableHead>
+              <TableHead>Banco</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead>Filial</TableHead>
+              <TableHead className="text-right">Saldo atual</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {contas.map((conta) => (
               <Fragment key={conta.id}>
-                <tr className="border-t border-zinc-100">
-                  <td className="px-4 py-2">
+                <TableRow>
+                  <TableCell>
                     {conta.nomeConta}
-                    {!conta.ativa && <span className="ml-2 rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">inativa</span>}
-                  </td>
-                  <td className="px-4 py-2">{conta.banco}</td>
-                  <td className="px-4 py-2">{conta.tipo}</td>
-                  <td className="px-4 py-2">{nomeFilial(conta.filialId)}</td>
-                  <td className="px-4 py-2">
-                    {Number(conta.saldoAtual).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                  </td>
-                  <td className="px-4 py-2 text-right space-x-3 whitespace-nowrap">
-                    <button onClick={() => onAlternarImportacao(conta.id)} className="text-xs font-medium text-zinc-700 underline">
-                      {contaExpandidaId === conta.id ? "Fechar" : "Importar extrato"}
-                    </button>
-                    <button onClick={() => alternarStatus(conta)} className="text-xs text-zinc-500 underline">
-                      {conta.ativa ? "Inativar" : "Ativar"}
-                    </button>
-                  </td>
-                </tr>
+                    {!conta.ativa && <Badge variant="secondary" className="ml-2">inativa</Badge>}
+                  </TableCell>
+                  <TableCell>{conta.banco}</TableCell>
+                  <TableCell>{conta.tipo}</TableCell>
+                  <TableCell>{nomeFilial(conta.filialId)}</TableCell>
+                  <TableCell className="text-right"><ValorMonetario valor={conta.saldoAtual} /></TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="xs" onClick={() => onAlternarImportacao(conta.id)}>
+                        {contaExpandidaId === conta.id ? "Fechar" : "Importar extrato"}
+                      </Button>
+                      <Button variant="ghost" size="xs" onClick={() => alternarStatus(conta)}>
+                        {conta.ativa ? "Inativar" : "Ativar"}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
 
                 {contaExpandidaId === conta.id && (
-                  <tr className="border-t border-zinc-100 bg-zinc-50">
-                    <td colSpan={6} className="px-4 py-4">
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableCell colSpan={6} className="whitespace-normal py-4">
                       <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
                           <input
@@ -294,64 +317,64 @@ export default function ContasBancariasPage() {
                             onChange={(e) => setArquivoSelecionado(e.target.files?.[0] || null)}
                             className="text-sm"
                           />
-                          <button
+                          <Button
+                            size="sm"
                             onClick={() => onEnviarArquivo(conta.id)}
                             disabled={!arquivoSelecionado || enviandoImport}
-                            className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
                           >
                             {enviandoImport ? "Importando…" : "Enviar arquivo"}
-                          </button>
+                          </Button>
                         </div>
 
-                        {erroImport && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erroImport}</p>}
+                        {erroImport && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erroImport}</p>}
 
                         <div>
-                          <p className="mb-1 text-xs font-medium uppercase text-zinc-500">Histórico de importações</p>
+                          <p className="mb-1 text-xs font-medium uppercase text-muted-foreground">Histórico de importações</p>
                           {(historicoPorConta[conta.id] || []).length === 0 ? (
-                            <p className="text-sm text-zinc-400">Nenhuma importação ainda.</p>
+                            <p className="text-sm text-muted-foreground">Nenhuma importação ainda.</p>
                           ) : (
-                            <table className="w-full text-sm">
-                              <tbody>
+                            <Table>
+                              <TableBody>
                                 {(historicoPorConta[conta.id] || []).map((imp) => (
-                                  <tr key={imp.id} className="border-t border-zinc-200">
-                                    <td className="py-1.5 pr-3">{imp.nomeArquivo}</td>
-                                    <td className="py-1.5 pr-3">{new Date(imp.importadoEm).toLocaleString("pt-BR")}</td>
-                                    <td className="py-1.5 pr-3">
+                                  <TableRow key={imp.id}>
+                                    <TableCell>{imp.nomeArquivo}</TableCell>
+                                    <TableCell>{new Date(imp.importadoEm).toLocaleString("pt-BR")}</TableCell>
+                                    <TableCell>
                                       {imp.totalImportadas} importadas / {imp.totalDuplicadas} duplicadas ({imp.totalLidas} lidas)
-                                    </td>
-                                    <td className="py-1.5">
-                                      <span
-                                        className={
+                                    </TableCell>
+                                    <TableCell>
+                                      <Badge
+                                        variant={
                                           imp.status === "FALHOU_PARCIAL"
-                                            ? "rounded bg-red-50 px-2 py-0.5 text-xs text-red-700"
+                                            ? "destructive"
                                             : imp.status === "CONCLUIDO"
-                                              ? "rounded bg-green-50 px-2 py-0.5 text-xs text-green-700"
-                                              : "rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500"
+                                              ? "default"
+                                              : "secondary"
                                         }
                                       >
                                         {STATUS_LABEL[imp.status]}
-                                      </span>
-                                    </td>
-                                  </tr>
+                                      </Badge>
+                                    </TableCell>
+                                  </TableRow>
                                 ))}
-                              </tbody>
-                            </table>
+                              </TableBody>
+                            </Table>
                           )}
                         </div>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
               </Fragment>
             ))}
             {!carregando && contas.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-zinc-400">Nenhuma conta bancária cadastrada.</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={6} className="py-6 text-center text-muted-foreground">Nenhuma conta bancária cadastrada.</TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }

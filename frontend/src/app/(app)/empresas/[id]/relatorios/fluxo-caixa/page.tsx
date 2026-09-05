@@ -5,15 +5,24 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ValorMonetario } from "@/components/valor-monetario";
 
 type Balde = { periodo: string; entradas: number; saidas: number; saldoAcumulado: number };
 type FluxoCaixa = { saldoInicioPeriodo: number; baldes: Balde[] };
 
 const FILTROS_INICIAIS = { dataInicial: "", dataFinal: "", granularidade: "dia" };
-
-function formatarMoeda(valor: number) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
+const ITENS_GRANULARIDADE = { dia: "Dia", semana: "Semana", mes: "Mês" };
 
 export default function FluxoCaixaPage() {
   const params = useParams<{ id: string }>();
@@ -53,90 +62,91 @@ export default function FluxoCaixaPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div>
-        <Link href={`/empresas/${empresaId}/dashboard`} className="text-sm text-zinc-500 underline">
+        <Link href={`/empresas/${empresaId}/dashboard`} className="text-sm text-muted-foreground underline">
           ← Dashboard
         </Link>
       </div>
 
-      <h1 className="text-lg font-semibold text-zinc-900">Fluxo de Caixa</h1>
-      <p className="text-xs text-zinc-400">
+      <h1 className="text-lg font-semibold">Fluxo de Caixa</h1>
+      <p className="text-xs text-muted-foreground">
         Saldo acumulado = saldo inicial das contas + soma das transações até cada período. É histórico, não uma
         previsão de futuro.
       </p>
 
-      <form onSubmit={onFiltrar} className="flex flex-wrap items-end gap-3 rounded-lg bg-white p-4 ring-1 ring-zinc-200">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-zinc-700">Data inicial</label>
-          <input
-            type="date"
-            value={filtrosForm.dataInicial}
-            onChange={(e) => setFiltrosForm((f) => ({ ...f, dataInicial: e.target.value }))}
-            className="rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-zinc-700">Data final</label>
-          <input
-            type="date"
-            value={filtrosForm.dataFinal}
-            onChange={(e) => setFiltrosForm((f) => ({ ...f, dataFinal: e.target.value }))}
-            className="rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-          />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-zinc-700">Granularidade</label>
-          <select
-            value={filtrosForm.granularidade}
-            onChange={(e) => setFiltrosForm((f) => ({ ...f, granularidade: e.target.value }))}
-            className="rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
-          >
-            <option value="dia">Dia</option>
-            <option value="semana">Semana</option>
-            <option value="mes">Mês</option>
-          </select>
-        </div>
-        <button type="submit" className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800">
-          Gerar
-        </button>
-      </form>
+      <Card className="px-4">
+        <form onSubmit={onFiltrar} className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Data inicial</label>
+            <Input
+              type="date"
+              value={filtrosForm.dataInicial}
+              onChange={(e) => setFiltrosForm((f) => ({ ...f, dataInicial: e.target.value }))}
+              className="w-auto"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Data final</label>
+            <Input
+              type="date"
+              value={filtrosForm.dataFinal}
+              onChange={(e) => setFiltrosForm((f) => ({ ...f, dataFinal: e.target.value }))}
+              className="w-auto"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Granularidade</label>
+            <Select
+              items={ITENS_GRANULARIDADE}
+              value={filtrosForm.granularidade}
+              onValueChange={(v) => v && setFiltrosForm((f) => ({ ...f, granularidade: v }))}
+            >
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dia">Dia</SelectItem>
+                <SelectItem value="semana">Semana</SelectItem>
+                <SelectItem value="mes">Mês</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button type="submit">Gerar</Button>
+        </form>
+      </Card>
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {carregando && <p className="text-sm text-zinc-500">Carregando…</p>}
+      {erro && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+      {carregando && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
       {fluxo && (
         <>
-          <p className="text-sm text-zinc-500">
-            Saldo no início do período: <span className="font-medium text-zinc-900">{formatarMoeda(fluxo.saldoInicioPeriodo)}</span>
+          <p className="text-sm text-muted-foreground">
+            Saldo no início do período: <ValorMonetario valor={fluxo.saldoInicioPeriodo} className="font-medium text-foreground" />
           </p>
-          <div className="overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
-                <tr>
-                  <th className="px-3 py-2">Período</th>
-                  <th className="px-3 py-2 text-right">Entradas</th>
-                  <th className="px-3 py-2 text-right">Saídas</th>
-                  <th className="px-3 py-2 text-right">Saldo acumulado</th>
-                </tr>
-              </thead>
-              <tbody>
+          <Card className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Período</TableHead>
+                  <TableHead className="text-right">Entradas</TableHead>
+                  <TableHead className="text-right">Saídas</TableHead>
+                  <TableHead className="text-right">Saldo acumulado</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {fluxo.baldes.map((b) => (
-                  <tr key={b.periodo} className="border-t border-zinc-100">
-                    <td className="px-3 py-2">{b.periodo}</td>
-                    <td className="px-3 py-2 text-right text-green-700">{formatarMoeda(b.entradas)}</td>
-                    <td className="px-3 py-2 text-right text-red-700">{formatarMoeda(b.saidas)}</td>
-                    <td className={`px-3 py-2 text-right font-medium ${b.saldoAcumulado < 0 ? "text-red-700" : "text-zinc-900"}`}>
-                      {formatarMoeda(b.saldoAcumulado)}
-                    </td>
-                  </tr>
+                  <TableRow key={b.periodo}>
+                    <TableCell>{b.periodo}</TableCell>
+                    <TableCell className="text-right"><ValorMonetario valor={b.entradas} cor="positivo" /></TableCell>
+                    <TableCell className="text-right"><ValorMonetario valor={b.saidas} cor="negativo" /></TableCell>
+                    <TableCell className="text-right font-medium"><ValorMonetario valor={b.saldoAcumulado} /></TableCell>
+                  </TableRow>
                 ))}
                 {fluxo.baldes.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-zinc-400">Nenhuma movimentação no período.</td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">Nenhuma movimentação no período.</TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Card>
         </>
       )}
     </div>

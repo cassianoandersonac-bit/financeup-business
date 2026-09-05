@@ -6,6 +6,18 @@ import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { construirArvore, achatarComProfundidade, type NoArvore } from "@/lib/arvore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type PlanoConta = {
   id: string;
@@ -15,6 +27,9 @@ type PlanoConta = {
   contaPaiId: string | null;
   ativo: boolean;
 };
+
+const NENHUMA_CONTA_PAI = "__nenhuma__";
+const ITENS_TIPO = { RECEITA: "Receita", DESPESA: "Despesa", TRANSFERENCIA: "Transferência" };
 
 function LinhaArvore({
   no,
@@ -27,21 +42,19 @@ function LinhaArvore({
 }) {
   return (
     <>
-      <tr className="border-t border-zinc-100">
-        <td className="px-3 py-2" style={{ paddingLeft: `${12 + profundidade * 20}px` }}>
-          {no.codigo}
-        </td>
-        <td className="px-3 py-2">
+      <TableRow>
+        <TableCell style={{ paddingLeft: `${16 + profundidade * 20}px` }}>{no.codigo}</TableCell>
+        <TableCell>
           {no.descricao}
-          {!no.ativo && <span className="ml-2 rounded bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">inativa</span>}
-        </td>
-        <td className="px-3 py-2">{no.tipo}</td>
-        <td className="px-3 py-2 text-right">
-          <button onClick={() => onToggle(no)} className="text-xs text-zinc-500 underline">
+          {!no.ativo && <Badge variant="secondary" className="ml-2">inativa</Badge>}
+        </TableCell>
+        <TableCell>{no.tipo}</TableCell>
+        <TableCell className="text-right">
+          <Button variant="ghost" size="xs" onClick={() => onToggle(no)}>
             {no.ativo ? "Inativar" : "Ativar"}
-          </button>
-        </td>
-      </tr>
+          </Button>
+        </TableCell>
+      </TableRow>
       {no.filhos.map((filho) => (
         <LinhaArvore key={filho.id} no={filho} profundidade={profundidade + 1} onToggle={onToggle} />
       ))}
@@ -128,82 +141,91 @@ export default function PlanoContasPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div>
-        <Link href="/empresas" className="text-sm text-zinc-500 underline">
+        <Link href="/empresas" className="text-sm text-muted-foreground underline">
           ← Empresas
         </Link>
       </div>
 
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-zinc-900">Plano de Contas</h1>
-        <button
-          onClick={() => setMostrarForm((v) => !v)}
-          className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
-        >
+        <h1 className="text-lg font-semibold">Plano de Contas</h1>
+        <Button onClick={() => setMostrarForm((v) => !v)}>
           {mostrarForm ? "Cancelar" : "Nova conta"}
-        </button>
+        </Button>
       </div>
 
       {mostrarForm && (
-        <form onSubmit={onCriar} className="space-y-3 rounded-lg bg-white p-4 ring-1 ring-zinc-200">
-          {erroForm && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erroForm}</p>}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Código *</label>
-              <input required value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="3.1" className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
+        <Card className="px-4">
+          <form onSubmit={onCriar} className="space-y-3">
+            {erroForm && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erroForm}</p>}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Código *</label>
+                <Input required value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="3.1" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Descrição *</label>
+                <Input required value={descricao} onChange={(e) => setDescricao(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Tipo</label>
+                <Select items={ITENS_TIPO} value={tipo} onValueChange={(v) => v && setTipo(v as PlanoConta["tipo"])}>
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="RECEITA">Receita</SelectItem>
+                    <SelectItem value="DESPESA">Despesa</SelectItem>
+                    <SelectItem value="TRANSFERENCIA">Transferência</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-sm font-medium">Conta pai (opcional)</label>
+                <Select
+                  items={{ [NENHUMA_CONTA_PAI]: "Nenhuma (conta principal)", ...Object.fromEntries(opcoesContaPai.map((o) => [o.id, o.rotulo])) }}
+                  value={contaPaiId || NENHUMA_CONTA_PAI}
+                  onValueChange={(v) => setContaPaiId(!v || v === NENHUMA_CONTA_PAI ? "" : v)}
+                >
+                  <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={NENHUMA_CONTA_PAI}>Nenhuma (conta principal)</SelectItem>
+                    {opcoesContaPai.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>{o.rotulo}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Descrição *</label>
-              <input required value={descricao} onChange={(e) => setDescricao(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Tipo</label>
-              <select value={tipo} onChange={(e) => setTipo(e.target.value as PlanoConta["tipo"])} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm">
-                <option value="RECEITA">Receita</option>
-                <option value="DESPESA">Despesa</option>
-                <option value="TRANSFERENCIA">Transferência</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-sm font-medium text-zinc-700">Conta pai (opcional)</label>
-              <select value={contaPaiId} onChange={(e) => setContaPaiId(e.target.value)} className="w-full rounded-md border border-zinc-300 px-3 py-2 text-sm">
-                <option value="">Nenhuma (conta principal)</option>
-                {opcoesContaPai.map((o) => (
-                  <option key={o.id} value={o.id}>{o.rotulo}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-          <button type="submit" disabled={salvando} className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50">
-            {salvando ? "Salvando…" : "Salvar conta"}
-          </button>
-        </form>
+            <Button type="submit" disabled={salvando}>
+              {salvando ? "Salvando…" : "Salvar conta"}
+            </Button>
+          </form>
+        </Card>
       )}
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {carregando && <p className="text-sm text-zinc-500">Carregando…</p>}
+      {erro && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+      {carregando && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
-      <div className="overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
-            <tr>
-              <th className="px-3 py-2">Código</th>
-              <th className="px-3 py-2">Descrição</th>
-              <th className="px-3 py-2">Tipo</th>
-              <th className="px-3 py-2"></th>
-            </tr>
-          </thead>
-          <tbody>
+      <Card className="p-0">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Código</TableHead>
+              <TableHead>Descrição</TableHead>
+              <TableHead>Tipo</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {arvore.map((no) => (
               <LinhaArvore key={no.id} no={no} profundidade={0} onToggle={alternarStatus} />
             ))}
             {!carregando && arvore.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-3 py-6 text-center text-zinc-400">Nenhuma conta cadastrada.</td>
-              </tr>
+              <TableRow>
+                <TableCell colSpan={4} className="py-6 text-center text-muted-foreground">Nenhuma conta cadastrada.</TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </Card>
     </div>
   );
 }

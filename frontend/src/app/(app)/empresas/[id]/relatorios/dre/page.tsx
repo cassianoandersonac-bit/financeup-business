@@ -6,6 +6,11 @@ import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { construirArvore, type NoArvore } from "@/lib/arvore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ValorMonetario } from "@/components/valor-monetario";
 
 type ContaDre = {
   id: string;
@@ -28,22 +33,14 @@ type Dre = {
 
 const TIPO_LABEL: Record<string, string> = { RECEITA: "Receita", DESPESA: "Despesa", TRANSFERENCIA: "Transferência" };
 
-function formatarMoeda(valor: number) {
-  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-
 function LinhaDre({ no, profundidade }: { no: NoArvore<ContaDre>; profundidade: number }) {
   if (no.totalComFilhos === 0 && no.filhos.every((f) => f.totalComFilhos === 0)) return null;
   return (
     <>
-      <tr className="border-t border-zinc-100">
-        <td className="px-3 py-2" style={{ paddingLeft: `${12 + profundidade * 20}px` }}>
-          {no.codigo} · {no.descricao}
-        </td>
-        <td className={`px-3 py-2 text-right ${no.totalComFilhos < 0 ? "text-red-700" : "text-green-700"}`}>
-          {formatarMoeda(no.totalComFilhos)}
-        </td>
-      </tr>
+      <TableRow>
+        <TableCell style={{ paddingLeft: `${16 + profundidade * 20}px` }}>{no.codigo} · {no.descricao}</TableCell>
+        <TableCell className="text-right"><ValorMonetario valor={no.totalComFilhos} /></TableCell>
+      </TableRow>
       {no.filhos.map((filho) => (
         <LinhaDre key={filho.id} no={filho} profundidade={profundidade + 1} />
       ))}
@@ -91,78 +88,78 @@ export default function DrePage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div>
-        <Link href={`/empresas/${empresaId}/dashboard`} className="text-sm text-zinc-500 underline">
+        <Link href={`/empresas/${empresaId}/dashboard`} className="text-sm text-muted-foreground underline">
           ← Dashboard
         </Link>
       </div>
 
-      <h1 className="text-lg font-semibold text-zinc-900">Resultado por Empresa (DRE)</h1>
+      <h1 className="text-lg font-semibold">Resultado por Empresa (DRE)</h1>
 
-      <form onSubmit={onFiltrar} className="flex flex-wrap items-end gap-3 rounded-lg bg-white p-4 ring-1 ring-zinc-200">
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-zinc-700">Data inicial</label>
-          <input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} className="rounded-md border border-zinc-300 px-2 py-1.5 text-sm" />
-        </div>
-        <div className="space-y-1">
-          <label className="text-xs font-medium text-zinc-700">Data final</label>
-          <input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} className="rounded-md border border-zinc-300 px-2 py-1.5 text-sm" />
-        </div>
-        <button type="submit" className="rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800">
-          Gerar
-        </button>
-        <p className="text-xs text-zinc-400">Sem data = todo o histórico</p>
-      </form>
+      <Card className="px-4">
+        <form onSubmit={onFiltrar} className="flex flex-wrap items-end gap-3">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Data inicial</label>
+            <Input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} className="w-auto" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Data final</label>
+            <Input type="date" value={dataFinal} onChange={(e) => setDataFinal(e.target.value)} className="w-auto" />
+          </div>
+          <Button type="submit">Gerar</Button>
+          <p className="text-xs text-muted-foreground">Sem data = todo o histórico</p>
+        </form>
+      </Card>
 
-      {erro && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{erro}</p>}
-      {carregando && <p className="text-sm text-zinc-500">Carregando…</p>}
+      {erro && <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{erro}</p>}
+      {carregando && <p className="text-sm text-muted-foreground">Carregando…</p>}
 
       {dre && (
         <>
           <div className="grid grid-cols-3 gap-4">
-            <div className="rounded-lg bg-white p-3 text-center ring-1 ring-zinc-200">
-              <p className="text-xs uppercase text-zinc-500">Receitas</p>
-              <p className="text-lg font-semibold text-green-700">{formatarMoeda(dre.totalReceitas)}</p>
-            </div>
-            <div className="rounded-lg bg-white p-3 text-center ring-1 ring-zinc-200">
-              <p className="text-xs uppercase text-zinc-500">Despesas</p>
-              <p className="text-lg font-semibold text-red-700">{formatarMoeda(dre.totalDespesas)}</p>
-            </div>
-            <div className="rounded-lg bg-white p-3 text-center ring-1 ring-zinc-200">
-              <p className="text-xs uppercase text-zinc-500">Resultado</p>
-              <p className={`text-lg font-semibold ${dre.resultado < 0 ? "text-red-700" : "text-green-700"}`}>{formatarMoeda(dre.resultado)}</p>
-            </div>
+            <Card className="items-center px-3 text-center">
+              <p className="text-xs uppercase text-muted-foreground">Receitas</p>
+              <p className="text-lg font-semibold"><ValorMonetario valor={dre.totalReceitas} cor="positivo" className="text-lg" /></p>
+            </Card>
+            <Card className="items-center px-3 text-center">
+              <p className="text-xs uppercase text-muted-foreground">Despesas</p>
+              <p className="text-lg font-semibold"><ValorMonetario valor={dre.totalDespesas} cor="negativo" className="text-lg" /></p>
+            </Card>
+            <Card className="items-center px-3 text-center">
+              <p className="text-xs uppercase text-muted-foreground">Resultado</p>
+              <p className="text-lg font-semibold"><ValorMonetario valor={dre.resultado} className="text-lg" /></p>
+            </Card>
           </div>
 
-          <div className="overflow-hidden rounded-lg bg-white ring-1 ring-zinc-200">
-            <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
-                <tr>
-                  <th className="px-3 py-2">Conta</th>
-                  <th className="px-3 py-2 text-right">Total</th>
-                </tr>
-              </thead>
-              <tbody>
+          <Card className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Conta</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {arvore.map((no) => (
                   <LinhaDre key={no.id} no={no} profundidade={0} />
                 ))}
                 {dre.naoClassificado.map((n) => (
-                  <tr key={n.tipo} className="border-t border-zinc-100 italic text-zinc-500">
-                    <td className="px-3 py-2">{TIPO_LABEL[n.tipo] || n.tipo} não classificada(s)</td>
-                    <td className={`px-3 py-2 text-right ${n.total < 0 ? "text-red-700" : "text-green-700"}`}>{formatarMoeda(n.total)}</td>
-                  </tr>
+                  <TableRow key={n.tipo} className="italic text-muted-foreground">
+                    <TableCell>{TIPO_LABEL[n.tipo] || n.tipo} não classificada(s)</TableCell>
+                    <TableCell className="text-right"><ValorMonetario valor={n.total} /></TableCell>
+                  </TableRow>
                 ))}
                 {arvore.length === 0 && dre.naoClassificado.length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="px-3 py-6 text-center text-zinc-400">Nenhuma movimentação no período.</td>
-                  </tr>
+                  <TableRow>
+                    <TableCell colSpan={2} className="py-6 text-center text-muted-foreground">Nenhuma movimentação no período.</TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
+          </Card>
 
           {dre.totalTransferencias !== 0 && (
-            <p className="text-xs text-zinc-400">
-              Transferências no período: {formatarMoeda(dre.totalTransferencias)} (não entram no resultado).
+            <p className="text-xs text-muted-foreground">
+              Transferências no período: <ValorMonetario valor={dre.totalTransferencias} cor="auto" className="text-xs" /> (não entram no resultado).
             </p>
           )}
         </>
