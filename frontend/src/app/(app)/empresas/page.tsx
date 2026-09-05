@@ -202,6 +202,9 @@ export default function EmpresasPage() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
+                <Link href={`/empresas/${empresa.id}/dashboard`} className="text-sm font-medium text-zinc-700 underline">
+                  Dashboard
+                </Link>
                 <Link href={`/empresas/${empresa.id}/transacoes`} className="text-sm font-medium text-zinc-700 underline">
                   Transações
                 </Link>

@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { construirArvore, achatarComProfundidade, type NoArvore } from "@/lib/arvore";
 
 type PlanoConta = {
   id: string;
@@ -15,33 +16,12 @@ type PlanoConta = {
   ativo: boolean;
 };
 
-type NoArvore = PlanoConta & { filhos: NoArvore[] };
-
-function construirArvore(lista: PlanoConta[]): NoArvore[] {
-  const porId = new Map<string, NoArvore>();
-  lista.forEach((c) => porId.set(c.id, { ...c, filhos: [] }));
-  const raizes: NoArvore[] = [];
-  porId.forEach((no) => {
-    const pai = no.contaPaiId ? porId.get(no.contaPaiId) : undefined;
-    if (pai) pai.filhos.push(no);
-    else raizes.push(no);
-  });
-  return raizes;
-}
-
-function achatarComProfundidade(nos: NoArvore[], profundidade = 0): { id: string; rotulo: string }[] {
-  return nos.flatMap((no) => [
-    { id: no.id, rotulo: `${"— ".repeat(profundidade)}${no.codigo} · ${no.descricao}` },
-    ...achatarComProfundidade(no.filhos, profundidade + 1),
-  ]);
-}
-
 function LinhaArvore({
   no,
   profundidade,
   onToggle,
 }: {
-  no: NoArvore;
+  no: NoArvore<PlanoConta>;
   profundidade: number;
   onToggle: (c: PlanoConta) => void;
 }) {

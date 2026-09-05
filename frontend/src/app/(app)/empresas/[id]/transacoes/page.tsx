@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -55,15 +55,33 @@ function construirQuery(f: typeof FILTROS_INICIAIS, pagina: number) {
 }
 
 export default function TransacoesPage() {
+  return (
+    <Suspense>
+      <TransacoesPageInterna />
+    </Suspense>
+  );
+}
+
+function filtrosIniciaisComQuery(searchParams: URLSearchParams) {
+  const filtros = { ...FILTROS_INICIAIS };
+  (Object.keys(filtros) as (keyof typeof FILTROS_INICIAIS)[]).forEach((chave) => {
+    const valor = searchParams.get(chave);
+    if (valor) filtros[chave] = valor;
+  });
+  return filtros;
+}
+
+function TransacoesPageInterna() {
   const params = useParams<{ id: string }>();
   const empresaId = params.id;
+  const searchParams = useSearchParams();
   const { token, organizacaoAtual } = useAuth();
   const orgId = organizacaoAtual?.id;
 
   const [contas, setContas] = useState<ContaResumo[]>([]);
   const [planoContas, setPlanoContas] = useState<PlanoContaResumo[]>([]);
-  const [filtrosForm, setFiltrosForm] = useState(FILTROS_INICIAIS);
-  const [filtrosAplicados, setFiltrosAplicados] = useState(FILTROS_INICIAIS);
+  const [filtrosForm, setFiltrosForm] = useState(() => filtrosIniciaisComQuery(searchParams));
+  const [filtrosAplicados, setFiltrosAplicados] = useState(() => filtrosIniciaisComQuery(searchParams));
   const [pagina, setPagina] = useState(1);
 
   const [resposta, setResposta] = useState<RespostaListagem | null>(null);
@@ -254,6 +272,7 @@ export default function TransacoesPage() {
               className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
             >
               <option value="">Todas</option>
+              <option value="nenhum">Sem classificação</option>
               {planoContas.map((p) => (
                 <option key={p.id} value={p.id}>{p.codigo} · {p.descricao}</option>
               ))}

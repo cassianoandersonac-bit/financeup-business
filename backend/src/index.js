@@ -9,6 +9,7 @@ const contasBancariasRoutes = require('./routes/contasBancarias');
 const importacoesRoutes    = require('./routes/importacoes');
 const transacoesRoutes     = require('./routes/transacoes');
 const planoContasRoutes    = require('./routes/planoContas');
+const relatoriosRoutes     = require('./routes/relatorios');
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use(
 );
 app.use('/organizacoes/:organizacaoId/empresas/:empresaId/transacoes', transacoesRoutes);
 app.use('/organizacoes/:organizacaoId/empresas/:empresaId/plano-contas', planoContasRoutes);
+app.use('/organizacoes/:organizacaoId/empresas/:empresaId/relatorios', relatoriosRoutes);
 app.get('/health', (_, res) => res.json({ ok: true }));
 
 // ── Inicia ───────────────────────────────────────────────────────────────────

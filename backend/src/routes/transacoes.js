@@ -4,6 +4,7 @@ const { PrismaClient, Prisma } = require('@prisma/client');
 const requireAuth = require('../middleware/auth');
 const requireTenant = require('../middleware/tenant');
 const { construirFiltroPrismaValor } = require('../lib/filtroValor');
+const { construirFiltroData } = require('../lib/periodo');
 
 const router = express.Router({ mergeParams: true });
 const prisma = new PrismaClient();
@@ -63,7 +64,10 @@ router.get('/', async (req, res) => {
     if (descricao) where.descricao = { contains: descricao, mode: 'insensitive' };
     if (tipo) where.tipo = tipo;
     if (contaBancariaId) where.contaBancariaId = contaBancariaId;
-    if (planoContaId) where.planoContaId = planoContaId;
+    // sentinela "nenhum" filtra as sem classificação (planoContaId IS NULL) —
+    // usado pelo contador clicável do Dashboard
+    if (planoContaId === 'nenhum') where.planoContaId = null;
+    else if (planoContaId) where.planoContaId = planoContaId;
 
     // sem filtro explícito de status, esconde as "arquivadas"
     // (CONFIRMADA_DUPLICATA/IGNORADA) da listagem padrão
@@ -75,13 +79,7 @@ router.get('/', async (req, res) => {
     }
 
     if (dataInicial || dataFinal) {
-      where.data = {};
-      if (dataInicial) where.data.gte = new Date(`${dataInicial}T00:00:00.000Z`);
-      if (dataFinal) {
-        const fim = new Date(`${dataFinal}T00:00:00.000Z`);
-        fim.setUTCDate(fim.getUTCDate() + 1);
-        where.data.lt = fim;
-      }
+      where.data = construirFiltroData(dataInicial, dataFinal);
     }
 
     const tamanho = Math.min(Math.max(parseInt(tamanhoPagina, 10) || TAMANHO_PAGINA_PADRAO, 1), TAMANHO_PAGINA_MAXIMO);
