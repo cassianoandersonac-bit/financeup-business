@@ -46,18 +46,18 @@ comece a cadastrar empresas.
 
 ## Status
 
-Implementado: autenticação (organização + usuário admin), CRUD de
-Empresas, Filiais e Contas Bancárias (todos isolados por organização),
-importação de extrato OFX/QFX com deduplicação (`fitidOfx`/`hashDedup` —
-ver `prompt-claude-code-import-ofx.md`), listagem de Transações com
-filtros (descrição, valor por faixa/exato, tipo, conta, data, status de
-duplicata, classificação), ordenação, paginação, conciliação e
-resolução de duplicata provável, e Plano de Contas (CRUD hierárquico,
-já ligado à classificação de Transações).
-
-Ainda não implementado (ver o prompt original para a ordem sugerida):
-Relatórios agregados (DRE simplificado, fluxo de caixa, dashboard).
+**Todo o roadmap original está implementado:** autenticação (organização
++ usuário admin), CRUD de Empresas/Filiais/Contas Bancárias, importação
+de extrato OFX/QFX com deduplicação (`fitidOfx`/`hashDedup` — ver
+`prompt-claude-code-import-ofx.md`), listagem de Transações com filtros/
+ordenação/paginação/conciliação/resolução de duplicata, Plano de Contas
+(CRUD hierárquico) e Relatórios — DRE hierárquico, Fluxo de Caixa (saldo
+acumulado no período, nunca "projetado") e Dashboard com 6 widgets (ver
+`prompt-claude-code-relatorios.md`).
 
 Banco Neon configurado e migration aplicada — fluxo completo (registro →
-empresa → conta → import de extrato) já testado ponta a ponta contra o
-banco de verdade.
+empresa → conta → import de extrato → transações → plano de contas →
+relatórios) testado ponta a ponta contra o banco de verdade.
+
+**Falta só o deploy:** repositório remoto no GitHub + Vercel
+(backend e frontend). Ainda não autorizado/feito.

@@ -51,8 +51,8 @@ lote, persistência em chunks com `status` (`PROCESSANDO`/`CONCLUIDO`/
 `FALHOU_PARCIAL`) em `ImportacaoExtrato`. Testes em `backend` rodam com
 `npm test` (Jest).
 
-Próximo, na ordem sugerida pelo prompt original: Relatórios (DRE
-simplificado, fluxo de caixa, dashboard).
+**Todo o roadmap original do prompt-claude-code-financeup-business.md
+está implementado.** Só falta deploy (ver abaixo).
 
 Repositório git local ainda sem remoto — não criar/push para o GitHub sem
 pedir autorização antes.
@@ -71,9 +71,26 @@ ciclo ao editar o pai e unicidade de `codigo` por empresa. Frontend
 recebe lista plana e monta a árvore no cliente. Já integrado com
 Transações (filtro de Classificação + seletor por linha).
 
+Também: Relatórios (`backend/src/services/relatorios/`,
+`backend/src/routes/relatorios.js`) — DRE hierárquico (rollup em
+memória, não SQL bruto/CTE), Fluxo de Caixa ("saldo acumulado" —
+**nunca "projetado" na UI**, não existe lançamento futuro no sistema) e
+Dashboard com 6 widgets. Ambos os relatórios só contam
+`statusDuplicata = UNICA`. Gráfico do dashboard é SVG próprio (sem lib
+nova), seguindo a skill `dataviz` (paleta validada, hover com
+crosshair+tooltip, fallback textual). `frontend/src/lib/arvore.ts` é o
+util de árvore compartilhado entre Plano de Contas e DRE.
+
 **Banco de dados:** Neon PostgreSQL real já configurado (`DATABASE_URL`
 pooled + `DIRECT_URL` direct, ambos em `backend/.env`, gitignored),
 migration inicial aplicada. Todo o fluxo (auth, CRUD de empresas/filiais/
-contas, import de OFX com dedup, Transações com filtros/resolução de
-duplicata, Plano de Contas) foi verificado ponta a ponta contra esse
-banco de verdade — não é mais só teste com mock.
+contas, import de OFX com dedup, Transações, Plano de Contas,
+Relatórios) foi verificado ponta a ponta contra esse banco de verdade —
+não é mais só teste com mock.
+
+## Próximo passo: deploy
+
+Falta criar o repositório remoto no GitHub e configurar o deploy
+(backend + frontend) na Vercel. **Pedir autorização explícita ao usuário
+antes de criar o repositório remoto ou fazer qualquer push** — isso
+nunca foi autorizado ainda.
