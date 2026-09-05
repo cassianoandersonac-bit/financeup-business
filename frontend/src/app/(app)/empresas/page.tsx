@@ -51,6 +51,10 @@ export default function EmpresasPage() {
   const [filiaisPorEmpresa, setFiliaisPorEmpresa] = useState<Record<string, Filial[]>>({});
   const [novaFilialNome, setNovaFilialNome] = useState("");
 
+  const [confirmandoExclusaoId, setConfirmandoExclusaoId] = useState<string | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroExclusao, setErroExclusao] = useState<string | null>(null);
+
   async function carregarEmpresas() {
     if (!orgId) return;
     setCarregando(true);
@@ -102,6 +106,21 @@ export default function EmpresasPage() {
     if (!orgId) return;
     await api.patch(`/organizacoes/${orgId}/empresas/${empresa.id}/status`, { ativa: !empresa.ativa }, token);
     await carregarEmpresas();
+  }
+
+  async function onExcluirEmpresa(empresaId: string) {
+    if (!orgId) return;
+    setErroExclusao(null);
+    setExcluindo(true);
+    try {
+      await api.delete(`/organizacoes/${orgId}/empresas/${empresaId}`, token);
+      setConfirmandoExclusaoId(null);
+      await carregarEmpresas();
+    } catch (err) {
+      setErroExclusao(err instanceof ApiError ? err.message : "Erro ao excluir empresa");
+    } finally {
+      setExcluindo(false);
+    }
   }
 
   async function carregarFiliais(empresaId: string) {
@@ -220,8 +239,43 @@ export default function EmpresasPage() {
                 <button onClick={() => alternarStatus(empresa)} className="rounded-md border border-zinc-300 px-2 py-1 text-sm hover:bg-zinc-100">
                   {empresa.ativa ? "Inativar" : "Ativar"}
                 </button>
+                <button
+                  onClick={() => {
+                    setErroExclusao(null);
+                    setConfirmandoExclusaoId(empresa.id);
+                  }}
+                  className="rounded-md border border-red-200 px-2 py-1 text-sm text-red-700 hover:bg-red-50"
+                >
+                  Excluir
+                </button>
               </div>
             </div>
+
+            {confirmandoExclusaoId === empresa.id && (
+              <div className="mt-4 space-y-2 rounded-md border border-red-200 bg-red-50 p-3">
+                <p className="text-sm text-red-800">
+                  Isso apaga <strong>{empresa.nome}</strong> definitivamente, junto com filiais, contas
+                  bancárias e plano de contas — não tem como desfazer. Só é permitido se a empresa não tiver
+                  nenhuma transação importada.
+                </p>
+                {erroExclusao && <p className="text-sm text-red-700">{erroExclusao}</p>}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onExcluirEmpresa(empresa.id)}
+                    disabled={excluindo}
+                    className="rounded-md bg-red-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-50"
+                  >
+                    {excluindo ? "Excluindo…" : "Sim, excluir definitivamente"}
+                  </button>
+                  <button
+                    onClick={() => setConfirmandoExclusaoId(null)}
+                    className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
 
             {expandida === empresa.id && (
               <div className="mt-4 space-y-2 border-t border-zinc-100 pt-4">

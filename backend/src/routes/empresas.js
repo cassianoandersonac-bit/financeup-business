@@ -133,4 +133,32 @@ router.patch('/:empresaId/status', async (req, res) => {
   }
 });
 
+// ── DELETE /:empresaId — exclusão definitiva ─────────────────────────────────
+// Só permitida se a empresa não tiver nenhuma transação vinculada — com
+// transação existente, a exclusão em cascata (filiais/contas/plano de
+// contas/transações, ver schema) apagaria histórico financeiro de
+// verdade sem chance de desfazer. Nesse caso o usuário deve inativar a
+// empresa em vez de excluir.
+router.delete('/:empresaId', async (req, res) => {
+  try {
+    const existente = await prisma.empresa.findFirst({
+      where: { id: req.params.empresaId, organizacaoId: req.organizacaoId }
+    });
+    if (!existente) return res.status(404).json({ erro: 'Empresa não encontrada' });
+
+    const totalTransacoes = await prisma.transacao.count({ where: { empresaId: existente.id } });
+    if (totalTransacoes > 0) {
+      return res.status(409).json({
+        erro: `Não é possível excluir: há ${totalTransacoes} transação(ões) vinculada(s) a esta empresa. Inative a empresa em vez de excluir, ou remova as transações primeiro.`
+      });
+    }
+
+    await prisma.empresa.delete({ where: { id: existente.id } });
+    res.status(204).send();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ erro: 'Erro interno no servidor' });
+  }
+});
+
 module.exports = router;
