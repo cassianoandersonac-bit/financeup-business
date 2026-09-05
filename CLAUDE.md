@@ -51,8 +51,8 @@ lote, persistência em chunks com `status` (`PROCESSANDO`/`CONCLUIDO`/
 `FALHOU_PARCIAL`) em `ImportacaoExtrato`. Testes em `backend` rodam com
 `npm test` (Jest).
 
-Próximo, na ordem sugerida pelo prompt original: Plano de Contas →
-Relatórios.
+Próximo, na ordem sugerida pelo prompt original: Relatórios (DRE
+simplificado, fluxo de caixa, dashboard).
 
 Repositório git local ainda sem remoto — não criar/push para o GitHub sem
 pedir autorização antes.
@@ -65,9 +65,15 @@ conciliar e ação de resolver `PROVAVEL_DUPLICATA` (confirma como
 duplicata real → arquiva sem mexer no saldo, ou marca como única →
 soma no `saldoAtual`, mesma lógica de ajuste do import).
 
+Também: Plano de Contas (`backend/src/routes/planoContas.js`) — CRUD
+hierárquico por empresa (`contaPaiId` auto-relação), com checagem de
+ciclo ao editar o pai e unicidade de `codigo` por empresa. Frontend
+recebe lista plana e monta a árvore no cliente. Já integrado com
+Transações (filtro de Classificação + seletor por linha).
+
 **Banco de dados:** Neon PostgreSQL real já configurado (`DATABASE_URL`
 pooled + `DIRECT_URL` direct, ambos em `backend/.env`, gitignored),
 migration inicial aplicada. Todo o fluxo (auth, CRUD de empresas/filiais/
-contas, import de OFX com dedup, listagem/filtros/resolução de
-duplicata em Transações) foi verificado ponta a ponta contra esse banco
-de verdade — não é mais só teste com mock.
+contas, import de OFX com dedup, Transações com filtros/resolução de
+duplicata, Plano de Contas) foi verificado ponta a ponta contra esse
+banco de verdade — não é mais só teste com mock.
