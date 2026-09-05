@@ -93,7 +93,10 @@ router.get('/', async (req, res) => {
         orderBy: { [ordenarPor]: direcao },
         skip: (paginaAtual - 1) * tamanho,
         take: tamanho,
-        include: { contaBancaria: { select: { nomeConta: true, banco: true } } },
+        include: {
+          contaBancaria: { select: { nomeConta: true, banco: true } },
+          planoConta: { select: { id: true, codigo: true, descricao: true } },
+        },
       }),
       prisma.transacao.count({ where }),
     ]);

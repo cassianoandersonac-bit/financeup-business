@@ -205,6 +205,9 @@ export default function EmpresasPage() {
                 <Link href={`/empresas/${empresa.id}/transacoes`} className="text-sm font-medium text-zinc-700 underline">
                   Transações
                 </Link>
+                <Link href={`/empresas/${empresa.id}/plano-contas`} className="text-sm font-medium text-zinc-700 underline">
+                  Plano de Contas
+                </Link>
                 <Link href={`/empresas/${empresa.id}/contas`} className="text-sm font-medium text-zinc-700 underline">
                   Contas bancárias
                 </Link>

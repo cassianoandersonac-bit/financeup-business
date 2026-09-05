@@ -7,6 +7,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
 type ContaResumo = { id: string; nomeConta: string; banco: string };
+type PlanoContaResumo = { id: string; codigo: string; descricao: string };
 
 type Transacao = {
   id: string;
@@ -18,6 +19,8 @@ type Transacao = {
   conciliado: boolean;
   contaBancariaId: string;
   contaBancaria: { nomeConta: string; banco: string };
+  planoContaId: string | null;
+  planoConta: { id: string; codigo: string; descricao: string } | null;
 };
 
 type RespostaListagem = { itens: Transacao[]; total: number; pagina: number; tamanhoPagina: number };
@@ -30,6 +33,7 @@ const FILTROS_INICIAIS = {
   dataInicial: "",
   dataFinal: "",
   statusDuplicata: "",
+  planoContaId: "",
   ordenarPor: "data",
   direcao: "desc",
 };
@@ -57,6 +61,7 @@ export default function TransacoesPage() {
   const orgId = organizacaoAtual?.id;
 
   const [contas, setContas] = useState<ContaResumo[]>([]);
+  const [planoContas, setPlanoContas] = useState<PlanoContaResumo[]>([]);
   const [filtrosForm, setFiltrosForm] = useState(FILTROS_INICIAIS);
   const [filtrosAplicados, setFiltrosAplicados] = useState(FILTROS_INICIAIS);
   const [pagina, setPagina] = useState(1);
@@ -95,8 +100,22 @@ export default function TransacoesPage() {
       .get<ContaResumo[]>(`/organizacoes/${orgId}/empresas/${empresaId}/contas-bancarias`, token)
       .then(setContas)
       .catch(() => {});
+    api
+      .get<PlanoContaResumo[]>(`/organizacoes/${orgId}/empresas/${empresaId}/plano-contas`, token)
+      .then(setPlanoContas)
+      .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId, empresaId]);
+
+  async function onClassificar(transacao: Transacao, planoContaId: string) {
+    if (!orgId) return;
+    await api.patch(
+      `/organizacoes/${orgId}/empresas/${empresaId}/transacoes/${transacao.id}`,
+      { planoContaId: planoContaId || null },
+      token
+    );
+    await carregar();
+  }
 
   function onSubmitFiltros(e: React.FormEvent) {
     e.preventDefault();
@@ -228,6 +247,19 @@ export default function TransacoesPage() {
             </select>
           </div>
           <div className="space-y-1">
+            <label className="text-xs font-medium text-zinc-700">Classificação</label>
+            <select
+              value={filtrosForm.planoContaId}
+              onChange={(e) => atualizarFiltro("planoContaId", e.target.value)}
+              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
+            >
+              <option value="">Todas</option>
+              {planoContas.map((p) => (
+                <option key={p.id} value={p.id}>{p.codigo} · {p.descricao}</option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-1">
             <label className="text-xs font-medium text-zinc-700">Ordenar por</label>
             <div className="flex gap-1">
               <select
@@ -273,6 +305,7 @@ export default function TransacoesPage() {
               <th className="px-3 py-2">Conta</th>
               <th className="px-3 py-2">Tipo</th>
               <th className="px-3 py-2">Valor</th>
+              <th className="px-3 py-2">Classificação</th>
               <th className="px-3 py-2">Duplicata</th>
               <th className="px-3 py-2">Conciliado</th>
               <th className="px-3 py-2"></th>
@@ -287,6 +320,18 @@ export default function TransacoesPage() {
                 <td className="px-3 py-2">{t.tipo}</td>
                 <td className={`whitespace-nowrap px-3 py-2 ${Number(t.valor) < 0 ? "text-red-700" : "text-green-700"}`}>
                   {formatarValor(t.valor)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2">
+                  <select
+                    value={t.planoContaId || ""}
+                    onChange={(e) => onClassificar(t, e.target.value)}
+                    className="rounded-md border border-zinc-200 px-1.5 py-1 text-xs"
+                  >
+                    <option value="">Sem classificação</option>
+                    {planoContas.map((p) => (
+                      <option key={p.id} value={p.id}>{p.codigo} · {p.descricao}</option>
+                    ))}
+                  </select>
                 </td>
                 <td className="whitespace-nowrap px-3 py-2">
                   {t.statusDuplicata !== "UNICA" && (
@@ -320,7 +365,7 @@ export default function TransacoesPage() {
             ))}
             {!carregando && (resposta?.itens || []).length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-zinc-400">Nenhuma transação encontrada.</td>
+                <td colSpan={9} className="px-3 py-6 text-center text-zinc-400">Nenhuma transação encontrada.</td>
               </tr>
             )}
           </tbody>
