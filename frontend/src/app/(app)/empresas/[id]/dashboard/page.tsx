@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { FluxoCaixaChart } from "./FluxoCaixaChart";
+import { SaldoAcumuladoChart } from "@/components/graficos/saldo-acumulado-chart";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ValorMonetario } from "@/components/valor-monetario";
@@ -133,7 +133,7 @@ export default function DashboardPage() {
 
       <Card className="px-4">
         <p className="mb-2 text-xs font-medium uppercase text-muted-foreground">Saldo acumulado — últimos meses</p>
-        <FluxoCaixaChart dados={dados.fluxoCaixa} />
+        <SaldoAcumuladoChart dados={dados.fluxoCaixa} />
       </Card>
     </div>
   );

@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ValorMonetario } from "@/components/valor-monetario";
+import { SaldoAcumuladoChart } from "@/components/graficos/saldo-acumulado-chart";
 
 type Balde = { periodo: string; entradas: number; saidas: number; saldoAcumulado: number };
 type FluxoCaixa = { saldoInicioPeriodo: number; baldes: Balde[] };
@@ -120,6 +121,11 @@ export default function FluxoCaixaPage() {
           <p className="text-sm text-muted-foreground">
             Saldo no início do período: <ValorMonetario valor={fluxo.saldoInicioPeriodo} className="font-medium text-foreground" />
           </p>
+
+          <Card className="px-4">
+            <SaldoAcumuladoChart dados={fluxo.baldes} />
+          </Card>
+
           <Card className="p-0">
             <Table>
               <TableHeader>

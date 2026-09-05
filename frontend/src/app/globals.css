@@ -71,11 +71,12 @@
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Paleta categórica validada pela skill dataviz (ordem fixa, não ciclar) */
+  --chart-1: #2a78d6; /* blue */
+  --chart-2: #eb6834; /* orange */
+  --chart-3: #1baf7a; /* aqua */
+  --chart-4: #eda100; /* yellow */
+  --chart-5: #e87ba4; /* magenta */
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -85,10 +86,11 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --positive: oklch(0.6 0.16 145);
-  --positive-foreground: oklch(0.985 0 0);
-  --negative: oklch(0.577 0.245 27.325);
-  --negative-foreground: oklch(0.985 0 0);
+  /* Status (fixo, nunca temizado — skill dataviz) */
+  --positive: #0ca30c;
+  --positive-foreground: #ffffff;
+  --negative: #d03b3b;
+  --negative-foreground: #ffffff;
 }
 
 .dark {
@@ -110,11 +112,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --chart-1: #3987e5; /* blue */
+  --chart-2: #d95926; /* orange */
+  --chart-3: #199e70; /* aqua */
+  --chart-4: #c98500; /* yellow */
+  --chart-5: #d55181; /* magenta */
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -123,10 +125,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
-  --positive: oklch(0.696 0.17 145);
-  --positive-foreground: oklch(0.145 0 0);
-  --negative: oklch(0.704 0.191 22.216);
-  --negative-foreground: oklch(0.145 0 0);
+  /* --positive/--negative não são redeclaradas aqui de propósito — status
+     é fixo entre temas (skill dataviz), herda o valor de :root. */
 }
 
 @layer base {

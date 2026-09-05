@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ValorMonetario } from "@/components/valor-monetario";
+import { DreBarChart, type ItemDre } from "@/components/graficos/dre-bar-chart";
 
 type ContaDre = {
   id: string;
@@ -85,6 +86,17 @@ export default function DrePage() {
 
   const arvore = dre ? construirArvore(dre.contas) : [];
 
+  const itensGrafico: ItemDre[] = dre
+    ? [
+        ...arvore
+          .filter((no) => no.totalComFilhos !== 0)
+          .map((no) => ({ id: no.id, rotulo: `${no.codigo} · ${no.descricao}`, total: no.totalComFilhos })),
+        ...dre.naoClassificado
+          .filter((n) => n.total !== 0)
+          .map((n) => ({ id: n.tipo, rotulo: `${TIPO_LABEL[n.tipo] || n.tipo} não classificada(s)`, total: n.total })),
+      ]
+    : [];
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
       <div>
@@ -129,6 +141,10 @@ export default function DrePage() {
               <p className="text-lg font-semibold"><ValorMonetario valor={dre.resultado} className="text-lg" /></p>
             </Card>
           </div>
+
+          <Card className="px-4">
+            <DreBarChart itens={itensGrafico} />
+          </Card>
 
           <Card className="p-0">
             <Table>
