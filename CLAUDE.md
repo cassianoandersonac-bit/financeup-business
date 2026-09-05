@@ -54,8 +54,10 @@ lote, persistência em chunks com `status` (`PROCESSANDO`/`CONCLUIDO`/
 **Todo o roadmap original do prompt-claude-code-financeup-business.md
 está implementado.** Só falta deploy (ver abaixo).
 
-Repositório git local ainda sem remoto — não criar/push para o GitHub sem
-pedir autorização antes.
+Repositório remoto: https://github.com/cassianoandersonac-bit/financeup-business
+(⚠️ está público — foi criado assim por engano, o pedido original era
+privado; corrigir em Settings → Danger Zone → Change visibility se ainda
+não tiver sido feito). Deploy automático a cada push em `main`.
 
 Também: listagem de Transações (`backend/src/routes/transacoes.js`) com
 filtros (descrição, valor — faixa dinâmica ou exata, ver
@@ -88,9 +90,21 @@ contas, import de OFX com dedup, Transações, Plano de Contas,
 Relatórios) foi verificado ponta a ponta contra esse banco de verdade —
 não é mais só teste com mock.
 
-## Próximo passo: deploy
+## Deploy (feito em 2026-09-04)
 
-Falta criar o repositório remoto no GitHub e configurar o deploy
-(backend + frontend) na Vercel. **Pedir autorização explícita ao usuário
-antes de criar o repositório remoto ou fazer qualquer push** — isso
-nunca foi autorizado ainda.
+- Backend: https://financeup-business-backend.vercel.app (projeto Vercel
+  `financeup-business-backend`, Root Directory `backend`)
+- Frontend: https://financeup-business-frontend.vercel.app (projeto
+  Vercel `financeup-business-frontend`, Root Directory `frontend`,
+  `NEXT_PUBLIC_API_URL` apontando pro backend acima)
+- Ambos ligados ao repo GitHub, deploy automático a cada push em `main`.
+- Variáveis de ambiente (`DATABASE_URL`, `DIRECT_URL`, `JWT_SECRET` no
+  backend) foram configuradas manualmente pelo usuário no painel da
+  Vercel — não existe ferramenta de API pra isso nesta sessão, então
+  qualquer variável nova precisa do mesmo processo manual.
+- `JWT_SECRET` de produção é diferente do usado em `backend/.env` local
+  (gerado com `crypto.randomBytes(32).toString('hex')`).
+
+Verificado ponta a ponta contra produção: login retornando 401 correto
+(prova que Prisma conectou no Neon), e o bundle do frontend com a URL
+certa do backend embutida (`NEXT_PUBLIC_API_URL` foi lido no build).

@@ -12,6 +12,14 @@ Especificação completa em
 - `backend/` — API Node + Express + Prisma + PostgreSQL
 - `frontend/` — Next.js (App Router, TypeScript, Tailwind)
 
+## Produção
+
+- Frontend: https://financeup-business-frontend.vercel.app
+- Backend (API): https://financeup-business-backend.vercel.app
+- Repositório: https://github.com/cassianoandersonac-bit/financeup-business
+- Deploy automático a cada push em `main` (dois projetos Vercel, cada um
+  com `Root Directory` apontando pra `backend/`/`frontend/`).
+
 ## Rodando localmente
 
 ### 1. Banco de dados
@@ -59,5 +67,9 @@ Banco Neon configurado e migration aplicada — fluxo completo (registro →
 empresa → conta → import de extrato → transações → plano de contas →
 relatórios) testado ponta a ponta contra o banco de verdade.
 
-**Falta só o deploy:** repositório remoto no GitHub + Vercel
-(backend e frontend). Ainda não autorizado/feito.
+**Deploy feito** (ver seção Produção acima) — testado ponta a ponta
+contra o backend/frontend publicados, mesmo banco Neon da etapa local.
+
+⚠️ O repositório no GitHub está **público** — foi criado assim por engano
+(o pedido original era privado). Trocar em Settings → Danger Zone →
+Change visibility, se ainda não tiver sido corrigido.
